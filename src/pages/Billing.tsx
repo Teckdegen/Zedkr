@@ -16,7 +16,7 @@ const Billing = () => {
           <h1 className="text-3xl font-bold">Billing</h1>
           <p className="text-muted-foreground mt-1">Track your earnings and withdrawals</p>
         </div>
-        <Button className="animate-pulse-glow">
+        <Button>
           <ArrowDownToLine className="mr-2 h-4 w-4" /> Withdraw
         </Button>
       </div>

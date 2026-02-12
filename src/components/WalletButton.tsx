@@ -10,10 +10,8 @@ const WalletButton = () => {
     <Button
       onClick={() => setConnected(!connected)}
       variant={connected ? "secondary" : "default"}
-      className={connected 
-        ? "font-mono text-sm" 
-        : "animate-pulse-glow"
-      }
+      className={connected ? "font-mono text-xs" : ""}
+      size="sm"
     >
       <Wallet className="mr-2 h-4 w-4" />
       {connected ? address : "Connect Wallet"}

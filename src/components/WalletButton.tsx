@@ -65,44 +65,53 @@ const WalletButton = () => {
       setNickname("");
       window.location.reload();
     } else {
-      // Final attempt to find the function if it was missed during load
-      const connectFn = typeof showConnect === 'function' ? showConnect : (window as any).StacksConnect?.showConnect;
+      const connectFn = (typeof showConnect === 'function' ? showConnect : null) ||
+        (window as any).StacksConnect?.showConnect ||
+        (window as any).StacksConnect?.authenticate;
 
       if (typeof connectFn !== 'function') {
-        console.error("showConnect is not defined as a function. Current value:", showConnect);
-        toast.error("Wallet connection library failed to load. Please refresh the page.");
+        console.error("Critical: showConnect not found.", {
+          stacksAuthExport: showConnect,
+          windowGlobal: (window as any).StacksConnect,
+        });
+        toast.error("Bridge library failed to initialize. Please refresh.");
         return;
       }
 
-      connectFn({
-        appDetails,
-        onFinish: () => {
-          const data = userSession.loadUserData();
-          setUserData(data);
-          const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
-          const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-          if (!savedNickname) {
-            setShowModal(true);
-          } else {
-            setNickname(savedNickname);
-          }
-        },
-        userSession,
-      });
+      try {
+        connectFn({
+          appDetails,
+          userSession,
+          onFinish: () => {
+            const data = userSession.loadUserData();
+            setUserData(data);
+            const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
+            const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
+            if (!savedNickname) {
+              setShowModal(true);
+            } else {
+              setNickname(savedNickname);
+            }
+          },
+        });
+      } catch (err) {
+        console.error("Wallet connect trigger failed", err);
+        toast.error("Could not trigger wallet. Check extension setup.");
+      }
     }
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (tempNickname.trim() && userData) {
-      const stxAddress = userData.profile.stxAddress.mainnet;
+      const stxAddress = userData.profile.stxAddress.mainnet || userData.profile.stxAddress.testnet;
       setNickname(tempNickname);
       setShowModal(false);
       localStorage.setItem(`zedkr_nickname_${stxAddress}`, tempNickname);
     }
   };
 
-  const address = userData?.profile?.stxAddress?.mainnet;
+  const address = userData?.profile?.stxAddress?.mainnet || userData?.profile?.stxAddress?.testnet;
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not Connected";
   const connected = !!userData;
 

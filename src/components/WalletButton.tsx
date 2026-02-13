@@ -4,55 +4,113 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Wallet } from "lucide-react";
+import { showConnect } from "@stacks/connect";
+import { userSession, appDetails } from "@/lib/stacks-auth";
 
 const WalletButton = () => {
-  const [connected, setConnected] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [tempNickname, setTempNickname] = useState("");
-  const address = "SP2J6Z...B48R";
+  const [balance, setBalance] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedName = localStorage.getItem("zedkr_nickname");
-    const isConnected = localStorage.getItem("zedkr_connected") === "true";
-    if (savedName) setNickname(savedName);
-    if (isConnected) setConnected(true);
+    if (userSession.isSignInPending()) {
+      userSession.handlePendingSignIn().then((data) => {
+        setUserData(data);
+        const stxAddress = data.profile.stxAddress.mainnet;
+        const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
+        if (!savedNickname) {
+          setShowModal(true);
+        } else {
+          setNickname(savedNickname);
+        }
+      });
+    } else if (userSession.isUserSignedIn()) {
+      const data = userSession.loadUserData();
+      setUserData(data);
+      const stxAddress = data.profile.stxAddress.mainnet;
+      const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
+      if (savedNickname) setNickname(savedNickname);
+    }
   }, []);
 
-  const handleConnect = () => {
-    if (connected) {
-      setConnected(false);
-      localStorage.setItem("zedkr_connected", "false");
+  useEffect(() => {
+    if (userData) {
+      const stxAddress = userData.profile.stxAddress.mainnet;
+      fetch(`https://stacks-node-api.mainnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
+        .then(res => res.json())
+        .then(data => {
+          const bal = (parseInt(data.stx.balance) / 1000000).toFixed(2);
+          setBalance(bal);
+        })
+        .catch(() => setBalance("0.00"));
     } else {
-      setShowModal(true);
+      setBalance(null);
+    }
+  }, [userData]);
+
+  const handleConnect = () => {
+    if (userSession.isUserSignedIn()) {
+      userSession.signUserOut();
+      setUserData(null);
+      setNickname("");
+    } else {
+      showConnect({
+        appDetails,
+        onFinish: () => {
+          const data = userSession.loadUserData();
+          setUserData(data);
+          const stxAddress = data.profile.stxAddress.mainnet;
+          const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
+          if (!savedNickname) {
+            setShowModal(true);
+          } else {
+            setNickname(savedNickname);
+          }
+        },
+        userSession,
+      });
     }
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (tempNickname.trim()) {
+    if (tempNickname.trim() && userData) {
+      const stxAddress = userData.profile.stxAddress.mainnet;
       setNickname(tempNickname);
-      setConnected(true);
       setShowModal(false);
-      localStorage.setItem("zedkr_nickname", tempNickname);
-      localStorage.setItem("zedkr_connected", "true");
+      localStorage.setItem(`zedkr_nickname_${stxAddress}`, tempNickname);
     }
   };
+
+  const address = userData?.profile?.stxAddress?.mainnet;
+  const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not Connected";
+  const connected = !!userData;
 
   return (
     <>
       <button
         onClick={handleConnect}
         className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${connected
-            ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
-            : "bg-primary text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
+          ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
+          : "bg-primary text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(34,197,94,0.2)]"
           }`}
       >
         <div className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-500" : "bg-white animate-pulse"}`} />
         {connected ? (
-          <span className="flex items-center gap-2">
-            <User className="w-3 h-3" />
-            {nickname || address}
+          <span className="flex items-center gap-3">
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-xs flex items-center gap-1.5">
+                <User className="w-3 h-3" />
+                {nickname || shortAddress}
+              </span>
+              {balance && (
+                <span className="text-[10px] font-mono opacity-60 ml-4">
+                  {balance} STX
+                </span>
+              )}
+            </div>
           </span>
         ) : (
           "Connect Wallet"
@@ -66,7 +124,6 @@ const WalletButton = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
-            onClick={() => setShowModal(false)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -79,8 +136,8 @@ const WalletButton = () => {
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
                   <Wallet className="w-8 h-8 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tighter">Create Profile</h2>
-                <p className="text-zinc-500 text-sm mt-2">Enter a unique Zedkr ID to link with your wallet.</p>
+                <h2 className="text-2xl font-bold tracking-tighter">Set Profile ID</h2>
+                <p className="text-zinc-500 text-sm mt-2">Almost there! Link a Zedkr ID to {shortAddress}.</p>
               </div>
 
               <form onSubmit={handleRegister} className="space-y-6">
@@ -96,20 +153,13 @@ const WalletButton = () => {
                       className="bg-zinc-900 border-white/5 pl-8 h-12 rounded-xl focus:ring-primary/20 font-medium"
                     />
                   </div>
-                  <p className="text-[10px] text-zinc-600 ml-1">Only letters, numbers, and underscores.</p>
+                  <p className="text-[10px] text-zinc-600 ml-1">Visible across the x402 protocol.</p>
                 </div>
 
                 <div className="pt-2">
                   <Button type="submit" className="w-full bg-primary text-white hover:bg-emerald-500 h-12 rounded-xl font-bold text-sm shadow-[0_0_20px_rgba(34,197,94,0.15)]">
-                    Complete Connection
+                    Finish Setup
                   </Button>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="w-full mt-4 text-xs text-zinc-500 hover:text-white transition-colors"
-                  >
-                    Cancel
-                  </button>
                 </div>
               </form>
             </motion.div>

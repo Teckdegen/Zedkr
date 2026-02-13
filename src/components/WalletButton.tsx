@@ -4,30 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Wallet } from "lucide-react";
-import { showConnect as stacksShowConnect } from "@stacks/connect";
-import * as StacksConnectModule from "@stacks/connect";
-import { userSession, appDetails } from "@/lib/stacks-auth";
-
-// Vite/Blockchain lib interop handling for production builds
-const getShowConnect = () => {
-  // 1. Direct named import
-  if (typeof stacksShowConnect === 'function') return stacksShowConnect;
-
-  // 2. Module object named property
-  if (typeof (StacksConnectModule as any).showConnect === 'function') return (StacksConnectModule as any).showConnect;
-
-  // 3. Module object default property (named)
-  if (typeof (StacksConnectModule as any).default?.showConnect === 'function') return (StacksConnectModule as any).default.showConnect;
-
-  // 4. Module object itself (if it was a default export of the function)
-  if (typeof StacksConnectModule === 'function') return StacksConnectModule;
-
-  // 5. Fallback for older versions or different aliases
-  const anyModule = StacksConnectModule as any;
-  return anyModule.showConnect || anyModule.default?.showConnect || anyModule.showBlockstackConnect || anyModule.default?.showBlockstackConnect;
-};
-
-const showConnect = getShowConnect();
+import { toast } from "sonner";
+import { userSession, appDetails, showConnect } from "@/lib/stacks-auth";
 
 const WalletButton = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -87,12 +65,16 @@ const WalletButton = () => {
       setNickname("");
       window.location.reload();
     } else {
-      if (typeof showConnect !== 'function') {
-        console.error("showConnect is not defined or not a function. Check @stacks/connect installation.");
+      // Final attempt to find the function if it was missed during load
+      const connectFn = typeof showConnect === 'function' ? showConnect : (window as any).StacksConnect?.showConnect;
+
+      if (typeof connectFn !== 'function') {
+        console.error("showConnect is not defined as a function. Current value:", showConnect);
+        toast.error("Wallet connection library failed to load. Please refresh the page.");
         return;
       }
 
-      showConnect({
+      connectFn({
         appDetails,
         onFinish: () => {
           const data = userSession.loadUserData();

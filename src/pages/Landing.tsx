@@ -41,10 +41,10 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-sm group-hover:bg-emerald-400 transition-colors shadow-[0_0_15px_rgba(0,230,118,0.3)]">
-                <span className="text-black font-black text-xl">Z</span>
+              <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110">
+                <img src="/logo.png" alt="Zedkr Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-lg font-bold tracking-tight">ZedKr</span>
+              <span className="text-xl font-bold tracking-tight">Zedkr</span>
             </Link>
             <div className="hidden md:flex items-center gap-6">
               <Link to="/dashboard" className="text-sm text-zinc-400 hover:text-white transition-colors">Dashboard</Link>

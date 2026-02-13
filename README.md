@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Zedkr - X402 API Monetization Protocol
 
 ## Project info
 

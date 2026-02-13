@@ -23,10 +23,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-6">
               <Link to="/" className="flex items-center gap-2 group">
-                <div className="w-6 h-6 bg-white flex items-center justify-center rounded-sm">
-                  <span className="text-black font-black text-sm">Z</span>
+                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <img src="/logo.png" alt="Zedkr Logo" className="w-full h-full object-contain" />
                 </div>
-                <span className="text-sm font-bold tracking-tight hidden sm:block">ZedKr</span>
+                <span className="text-sm font-bold tracking-tight hidden sm:block">Zedkr</span>
               </Link>
               <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
               <div className="hidden md:flex items-center gap-1">
@@ -37,8 +37,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       key={item.path}
                       to={item.path}
                       className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${isActive
-                          ? "text-white"
-                          : "text-zinc-500 hover:text-zinc-200"
+                        ? "text-white"
+                        : "text-zinc-500 hover:text-zinc-200"
                         }`}
                     >
                       {item.label}

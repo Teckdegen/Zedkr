@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import WalletButton from "@/components/WalletButton";
 import { topAPIs, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { ChevronRight, Zap, Shield, Globe } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 const features = [
   {
@@ -199,47 +199,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-20 px-6 bg-black relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-primary">
-              <div className="w-6 h-6 bg-primary flex items-center justify-center rounded-sm text-black font-black text-sm shadow-[0_0_10px_rgba(0,230,118,0.2)]">Z</div>
-              <span className="font-bold tracking-tight text-white">ZedKr</span>
-            </div>
-            <p className="text-zinc-500 text-sm">Empowering developers to monetize the web.</p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-16">
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Product</h4>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Features</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Pricing</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Analytics</Link>
-            </div>
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Resources</h4>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Docs</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">API Reference</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Guides</Link>
-            </div>
-            <div className="flex flex-col gap-4">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-primary">Company</h4>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">About</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Blog</Link>
-              <Link to="/" className="text-sm text-zinc-500 hover:text-white">Terms</Link>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-zinc-600">© 2025 ZedKr. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link to="/" className="text-zinc-600 hover:text-primary transition-colors hover:shadow-[0_0_10px_rgba(0,230,118,0.1)]"><Zap className="w-4 h-4" /></Link>
-            <Link to="/" className="text-zinc-600 hover:text-primary transition-colors hover:shadow-[0_0_10px_rgba(0,230,118,0.1)]"><Shield className="w-4 h-4" /></Link>
-            <Link to="/" className="text-zinc-600 hover:text-primary transition-colors hover:shadow-[0_0_10px_rgba(0,230,118,0.1)]"><Globe className="w-4 h-4" /></Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

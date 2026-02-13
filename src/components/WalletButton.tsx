@@ -15,34 +15,42 @@ const WalletButton = () => {
   const [balance, setBalance] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userSession.isSignInPending()) {
-      userSession.handlePendingSignIn().then((data) => {
+    try {
+      if (userSession.isSignInPending()) {
+        userSession.handlePendingSignIn().then((data) => {
+          setUserData(data);
+          const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
+          const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
+          if (!savedNickname) {
+            setShowModal(true);
+          } else {
+            setNickname(savedNickname);
+          }
+        });
+      } else if (userSession.isUserSignedIn()) {
+        const data = userSession.loadUserData();
         setUserData(data);
-        const stxAddress = data.profile.stxAddress.mainnet;
+        const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
         const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-        if (!savedNickname) {
-          setShowModal(true);
-        } else {
-          setNickname(savedNickname);
-        }
-      });
-    } else if (userSession.isUserSignedIn()) {
-      const data = userSession.loadUserData();
-      setUserData(data);
-      const stxAddress = data.profile.stxAddress.mainnet;
-      const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-      if (savedNickname) setNickname(savedNickname);
+        if (savedNickname) setNickname(savedNickname);
+      }
+    } catch (err) {
+      console.error("Session check failed", err);
     }
   }, []);
 
   useEffect(() => {
     if (userData) {
-      const stxAddress = userData.profile.stxAddress.mainnet;
+      const stxAddress = userData.profile.stxAddress.mainnet || userData.profile.stxAddress.testnet;
       fetch(`https://stacks-node-api.mainnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
         .then(res => res.json())
         .then(data => {
-          const bal = (parseInt(data.stx.balance) / 1000000).toFixed(2);
-          setBalance(bal);
+          if (data?.stx?.balance) {
+            const bal = (parseInt(data.stx.balance) / 1000000).toFixed(2);
+            setBalance(bal);
+          } else {
+            setBalance("0.00");
+          }
         })
         .catch(() => setBalance("0.00"));
     } else {
@@ -55,13 +63,19 @@ const WalletButton = () => {
       userSession.signUserOut();
       setUserData(null);
       setNickname("");
+      window.location.reload();
     } else {
+      if (typeof showConnect !== 'function') {
+        console.error("showConnect is not defined or not a function. Check @stacks/connect installation.");
+        return;
+      }
+
       showConnect({
         appDetails,
         onFinish: () => {
           const data = userSession.loadUserData();
           setUserData(data);
-          const stxAddress = data.profile.stxAddress.mainnet;
+          const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
           const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
           if (!savedNickname) {
             setShowModal(true);

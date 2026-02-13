@@ -4,38 +4,28 @@ import { Button } from "@/components/ui/button";
 import WalletButton from "@/components/WalletButton";
 import { topAPIs, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { ChevronRight, Globe, Zap, Shield, BarChart3, Rocket, Coins } from "lucide-react";
+import { ChevronRight, Zap, Shield, Globe } from "lucide-react";
 
 const features = [
   {
     title: "Instant API Registration",
     desc: "Register any REST API in seconds and start earning per call.",
-    icon: <Zap className="w-4 h-4" />
   },
   {
     title: "Stacks Powered",
     desc: "Built on Stacks blockchain for transparent, trustless payments.",
-    icon: <Shield className="w-4 h-4" />
   },
   {
     title: "Real-time Analytics",
     desc: "Track every call, monitor performance, and optimize revenue.",
-    icon: <BarChart3 className="w-4 h-4" />
   },
   {
     title: "Global Distribution",
     desc: "CDN-backed endpoints with 99.9% uptime guarantee.",
-    icon: <Globe className="w-4 h-4" />
   },
   {
     title: "Instant Payouts",
     desc: "Withdraw earnings in STX anytime, no minimums.",
-    icon: <Coins className="w-4 h-4" />
-  },
-  {
-    title: "Pay Per Call",
-    desc: "Users pay only for what they use. Fair and scalable pricing.",
-    icon: <Rocket className="w-4 h-4" />
   },
 ];
 
@@ -100,9 +90,6 @@ const Landing = () => {
                   Start Building
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="border-white/10 bg-transparent hover:bg-white/5 text-sm font-bold px-10 h-12 rounded-full text-white">
-                View Documentation
-              </Button>
             </div>
           </motion.div>
         </div>
@@ -192,10 +179,7 @@ const Landing = () => {
                 className="vercel-card p-8 group overflow-hidden relative"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="w-10 h-10 bg-primary/10 border border-primary/20 flex items-center justify-center rounded-lg mb-6 group-hover:bg-primary group-hover:text-black transition-all relative z-10 text-primary">
-                  {f.icon}
-                </div>
-                <h3 className="text-lg font-bold mb-3 relative z-10">{f.title}</h3>
+                <h3 className="text-xl font-bold mb-3 relative z-10">{f.title}</h3>
                 <p className="text-zinc-400 text-sm leading-relaxed relative z-10">{f.desc}</p>
               </motion.div>
             ))}

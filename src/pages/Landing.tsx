@@ -74,13 +74,13 @@ const Landing = () => {
               Built on Stacks Ecosystem
             </div>
 
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 vercel-gradient leading-[0.8] py-2">
-              X402:<br />MONETIZE ANY API.
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 vercel-gradient leading-[1] py-2">
+              Monetize any API <br className="hidden md:block" /> with x402.
             </h1>
 
             <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-              Transform any public API endpoint into a revenue stream using the x402 protocol. <br />
-              Automated, decentralized payments powered by the Stacks Blockchain.
+              Empowering developers to integrate the x402 protocol into any public API endpoint. <br />
+              Turn your code into a decentralized revenue stream on the Stacks Blockchain.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

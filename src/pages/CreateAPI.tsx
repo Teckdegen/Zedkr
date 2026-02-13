@@ -158,13 +158,6 @@ const CreateAPI = () => {
                         </div>
                     </section>
 
-                    {/* Security / Advanced (Placeholder) */}
-                    <section className="vercel-card p-8 opacity-50 cursor-not-allowed">
-                        <h2 className="text-lg font-bold mb-6">
-                            Advanced Security
-                        </h2>
-                        <p className="text-xs text-zinc-500">Rate limiting and developer key rotation will be available soon in Zedkr Pro.</p>
-                    </section>
 
                     <div className="flex items-center justify-end gap-4 pt-8">
                         <Button

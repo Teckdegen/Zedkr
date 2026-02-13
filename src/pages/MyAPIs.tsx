@@ -12,17 +12,9 @@ const MyAPIs = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tighter">My APIs</h1>
-          <p className="text-zinc-500 text-sm mt-1 font-medium">Manage and monitor your monetized x402 endpoints.</p>
-        </div>
-        <Button
-          onClick={() => setModalOpen(true)}
-          className="bg-primary text-white hover:bg-emerald-500 font-bold rounded-lg h-10 px-6 transition-all shadow-[0_0_15px_rgba(34,197,94,0.15)] flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> New API
-        </Button>
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold tracking-tighter">My APIs</h1>
+        <p className="text-zinc-500 text-sm mt-1 font-medium">Manage and monitor your monetized x402 endpoints.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

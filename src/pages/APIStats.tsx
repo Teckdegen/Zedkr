@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { userAPIs, callHistory, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
-import { ArrowLeft, Activity, Clock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Activity, Clock, ShieldCheck, Layers, ExternalLink, Zap } from "lucide-react";
 
 const APIStats = () => {
   const { id } = useParams();
@@ -19,21 +19,33 @@ const APIStats = () => {
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-4xl font-bold tracking-tighter">{api.name}</h1>
-          <p className="text-zinc-500 font-mono text-[11px] mt-2 bg-white/[0.03] px-2 py-1 rounded inline-block border border-white/5">{api.endpoint}</p>
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/5">
+              <Layers className="w-3 h-3 text-zinc-500" />
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{api.endpoints.length} Endpoints</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/5">
+              <ShieldCheck className="w-3 h-3 text-zinc-500" />
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">ID: {api.id}</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto">
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
+          <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-widest ${api.status === 'active'
+              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+              : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
+            }`}>
             <Activity className="w-3 h-3" />
-            Active
+            {api.status === 'active' ? 'Active' : 'Inactive'}
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Total Calls", value: `${(api.totalCalls / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
-          { label: "Revenue", value: `$${api.revenue.toLocaleString()}`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
-          { label: "Price / Call", value: `${api.pricePerCall} STX`, icon: <Clock className="w-3 h-3 text-zinc-500" /> },
+          { label: "Project Revenue", value: `$${api.revenue.toLocaleString()}`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
+          { label: "Total Requests", value: `${(api.totalCalls / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
+          { label: "Av. Latency", value: "42ms", icon: <Clock className="w-3 h-3 text-zinc-500" /> },
         ].map((s, i) => (
           <motion.div
             key={s.label}
@@ -51,41 +63,87 @@ const APIStats = () => {
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="vercel-card p-6 mb-8"
-      >
-        <div className="mb-8">
-          <h3 className="font-bold text-sm tracking-tight">API Traffic</h3>
-          <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest mt-1">Request Volume Overview</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Endpoints List */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm tracking-tight flex items-center gap-2">
+              <Zap className="w-4 h-4 text-primary" />
+              Active Endpoints
+            </h3>
+          </div>
+          {api.endpoints.map((endpoint, i) => (
+            <motion.div
+              key={endpoint.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 + i * 0.05 }}
+              className="vercel-card p-4 hover:bg-white/[0.02] transition-colors group"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-white group-hover:text-primary transition-colors">{endpoint.name}</span>
+                    <span className="text-[10px] font-mono text-zinc-600 bg-zinc-900 border border-white/5 px-1.5 rounded uppercase">{endpoint.id}</span>
+                  </div>
+                  <p className="text-[10px] font-mono text-zinc-500 truncate">https://api.zedkr.com{endpoint.path}</p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-bold text-zinc-600 tracking-tighter">Price</p>
+                    <p className="text-xs font-bold text-zinc-300">{endpoint.price} STX</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-bold text-zinc-600 tracking-tighter">Calls</p>
+                    <p className="text-xs font-bold text-zinc-300">{(endpoint.calls / 1000).toFixed(1)}K</p>
+                  </div>
+                  <div className="h-4 w-px bg-white/10 mx-1" />
+                  <button className="p-2 text-zinc-500 hover:text-white transition-colors">
+                    <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
-        <div className="h-[250px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={revenueChartData}>
-              <defs>
-                <linearGradient id="statGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="month" stroke="#1a1a1a" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-              <YAxis stroke="#1a1a1a" fontSize={10} tickLine={false} axisLine={false} width={30} />
-              <Tooltip
-                contentStyle={{
-                  background: "rgba(0,0,0,0.9)",
-                  border: "1px solid rgba(16, 185, 129, 0.2)",
-                  borderRadius: "4px",
-                  fontSize: "10px"
-                }}
-                itemStyle={{ color: "#10b981" }}
-              />
-              <Area type="monotone" dataKey="calls" stroke="#10b981" fill="url(#statGrad)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+
+        {/* Traffic Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="vercel-card p-6"
+        >
+          <div className="mb-8">
+            <h3 className="font-bold text-sm tracking-tight">Project Traffic</h3>
+            <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest mt-1">Aggregated Volume</p>
+          </div>
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueChartData}>
+                <defs>
+                  <linearGradient id="statGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" stroke="#1a1a1a" fontSize={10} tickLine={false} axisLine={false} dy={10} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(0,0,0,0.9)",
+                    border: "1px solid rgba(16, 185, 129, 0.2)",
+                    borderRadius: "4px",
+                    fontSize: "10px"
+                  }}
+                  itemStyle={{ color: "#10b981" }}
+                />
+                <Area type="monotone" dataKey="calls" stroke="#10b981" fill="url(#statGrad)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -153,4 +211,5 @@ const APIStats = () => {
 };
 
 export default APIStats;
+
 

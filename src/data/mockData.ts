@@ -16,12 +16,58 @@ export const revenueChartData = [
 ];
 
 export const userAPIs = [
-  { id: "1", name: "Weather Pro", endpoint: "https://api.zedkr.com/v1/weather", pricePerCall: 0.002, status: "active" as const, totalCalls: 342100, revenue: 684.20 },
-  { id: "2", name: "Sentiment Analysis", endpoint: "https://api.zedkr.com/v1/sentiment", pricePerCall: 0.005, status: "active" as const, totalCalls: 189400, revenue: 947.00 },
-  { id: "3", name: "Image Resize", endpoint: "https://api.zedkr.com/v1/resize", pricePerCall: 0.01, status: "active" as const, totalCalls: 98200, revenue: 982.00 },
-  { id: "4", name: "Geocoding", endpoint: "https://api.zedkr.com/v1/geocode", pricePerCall: 0.003, status: "inactive" as const, totalCalls: 45600, revenue: 136.80 },
-  { id: "5", name: "Text-to-Speech", endpoint: "https://api.zedkr.com/v1/tts", pricePerCall: 0.008, status: "active" as const, totalCalls: 234500, revenue: 1876.00 },
-  { id: "6", name: "Currency Exchange", endpoint: "https://api.zedkr.com/v1/exchange", pricePerCall: 0.001, status: "active" as const, totalCalls: 567800, revenue: 567.80 },
+  {
+    id: "1",
+    name: "Weather Pro",
+    status: "active" as const,
+    revenue: 684.20,
+    totalCalls: 342100,
+    endpoints: [
+      { id: "e1", name: "Current Weather", path: "/v1/weather", price: 0.002, calls: 240000, revenue: 480 },
+      { id: "e2", name: "5-Day Forecast", path: "/v1/forecast", price: 0.005, calls: 102100, revenue: 204.20 }
+    ]
+  },
+  {
+    id: "2",
+    name: "AI Essentials",
+    status: "active" as const,
+    revenue: 2823.00,
+    totalCalls: 423900,
+    endpoints: [
+      { id: "e3", name: "Sentiment Analysis", path: "/v1/sentiment", price: 0.005, calls: 189400, revenue: 947 },
+      { id: "e4", name: "Text-to-Speech", path: "/v1/tts", price: 0.008, calls: 234500, revenue: 1876 }
+    ]
+  },
+  {
+    id: "3",
+    name: "Media Tools",
+    status: "active" as const,
+    revenue: 982.00,
+    totalCalls: 98200,
+    endpoints: [
+      { id: "e5", name: "Image Resize", path: "/v1/resize", price: 0.01, calls: 98200, revenue: 982 }
+    ]
+  },
+  {
+    id: "4",
+    name: "Geo Services",
+    status: "inactive" as const,
+    revenue: 136.80,
+    totalCalls: 45600,
+    endpoints: [
+      { id: "e6", name: "Geocoding", path: "/v1/geocode", price: 0.003, calls: 45600, revenue: 136.80 }
+    ]
+  },
+  {
+    id: "6",
+    name: "Finance API",
+    status: "active" as const,
+    revenue: 567.80,
+    totalCalls: 567800,
+    endpoints: [
+      { id: "e7", name: "Currency Exchange", path: "/v1/exchange", price: 0.001, calls: 567800, revenue: 567.80 }
+    ]
+  },
 ];
 
 export const callHistory = [

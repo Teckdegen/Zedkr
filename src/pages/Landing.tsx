@@ -1,18 +1,17 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Zap, Shield, BarChart3, Code2, Globe, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WalletButton from "@/components/WalletButton";
 import { topAPIs, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 
 const features = [
-  { icon: Code2, title: "Instant API Registration", desc: "Register any REST API in seconds and start earning per call." },
-  { icon: Shield, title: "Stacks Powered", desc: "Built on Stacks blockchain for transparent, trustless payments." },
-  { icon: BarChart3, title: "Real-time Analytics", desc: "Track every call, monitor performance, and optimize revenue." },
-  { icon: Globe, title: "Global Distribution", desc: "CDN-backed endpoints with 99.9% uptime guarantee." },
-  { icon: Coins, title: "Instant Payouts", desc: "Withdraw earnings in STX anytime, no minimums." },
-  { icon: Zap, title: "Pay Per Call", desc: "Users pay only for what they use. Fair and scalable pricing." },
+  { title: "Instant API Registration", desc: "Register any REST API in seconds and start earning per call." },
+  { title: "Stacks Powered", desc: "Built on Stacks blockchain for transparent, trustless payments." },
+  { title: "Real-time Analytics", desc: "Track every call, monitor performance, and optimize revenue." },
+  { title: "Global Distribution", desc: "CDN-backed endpoints with 99.9% uptime guarantee." },
+  { title: "Instant Payouts", desc: "Withdraw earnings in STX anytime, no minimums." },
+  { title: "Pay Per Call", desc: "Users pay only for what they use. Fair and scalable pricing." },
 ];
 
 const Landing = () => {
@@ -23,8 +22,7 @@ const Landing = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              <span className="text-base font-semibold tracking-tight">ZedKr</span>
+              <span className="text-base font-bold tracking-tight">ZedKr</span>
             </Link>
             <div className="hidden sm:flex items-center gap-4">
               <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
@@ -38,7 +36,6 @@ const Landing = () => {
 
       {/* Hero with background image */}
       <section className="relative overflow-hidden">
-        {/* Background pattern image */}
         <div 
           className="absolute inset-0 opacity-40"
           style={{
@@ -47,7 +44,6 @@ const Landing = () => {
             backgroundPosition: "center",
           }}
         />
-        {/* Fade overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center pt-32 pb-40 px-4">
@@ -61,12 +57,11 @@ const Landing = () => {
               Built on Stacks Blockchain
             </div>
             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tighter mb-6 leading-[0.9]">
-              Monetize Your<br />
-              <span className="text-primary">API Endpoints</span>
+              Make Your APIs<br />
+              <span className="text-primary">x402 Powered</span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-              Register any API, set your price per call, and earn STX automatically. 
-              ZedKr handles metering, billing, and payouts.
+              Turn your regular APIs into x402-powered endpoints in a minute — without writing a single line of code. ZedKr handles metering, billing, and payouts.
             </p>
           </motion.div>
 
@@ -78,7 +73,7 @@ const Landing = () => {
           >
             <Link to="/dashboard">
               <Button size="lg" className="text-sm font-medium px-6 rounded-md">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                Get Started
               </Button>
             </Link>
             <Link to="/my-apis">
@@ -103,7 +98,7 @@ const Landing = () => {
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Revenue</p>
               <p className="text-3xl font-bold mt-1">$12,847.52</p>
             </div>
-            <span className="text-xs text-success font-medium bg-success/10 px-2 py-1 rounded">↑ 23%</span>
+            <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded">↑ 23%</span>
           </div>
           <ResponsiveContainer width="100%" height={100}>
             <AreaChart data={revenueChartData}>
@@ -119,27 +114,31 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      {/* Top APIs */}
+      {/* Top APIs - Professional table-style list */}
       <section className="py-24 px-4">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">Top Performing APIs</h2>
             <p className="text-sm text-muted-foreground">See what's trending on ZedKr</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="glass-card overflow-hidden">
+            <div className="grid grid-cols-3 px-6 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
+              <span>API Name</span>
+              <span className="text-center">Calls</span>
+              <span className="text-right">Revenue</span>
+            </div>
             {topAPIs.map((api, i) => (
               <motion.div
                 key={api.name}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="glass-card-hover p-5"
+                className="grid grid-cols-3 px-6 py-4 border-b border-border/50 last:border-0 hover:bg-secondary/40 transition-colors"
               >
-                <div className="text-3xl mb-3">{api.icon}</div>
-                <h3 className="font-medium text-sm mb-1">{api.name}</h3>
-                <p className="text-xs text-muted-foreground">{api.calls} calls</p>
-                <p className="text-primary text-sm font-semibold mt-2">{api.revenue}</p>
+                <span className="font-medium text-sm">{api.name}</span>
+                <span className="text-center text-sm text-muted-foreground">{api.calls}</span>
+                <span className="text-right text-sm font-semibold text-primary">{api.revenue}</span>
               </motion.div>
             ))}
           </div>
@@ -163,8 +162,7 @@ const Landing = () => {
                 transition={{ delay: i * 0.06 }}
                 className="glass-card-hover p-5"
               >
-                <f.icon className="h-5 w-5 text-primary mb-3" />
-                <h3 className="font-medium text-sm mb-1">{f.title}</h3>
+                <h3 className="font-semibold text-sm mb-2">{f.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -175,10 +173,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm">ZedKr</span>
-          </div>
+          <span className="font-bold text-sm">ZedKr</span>
           <p className="text-xs text-muted-foreground">© 2025 ZedKr. Built on Stacks.</p>
         </div>
       </footer>

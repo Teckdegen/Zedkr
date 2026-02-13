@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Plus, ExternalLink, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -14,58 +13,46 @@ const MyAPIs = () => {
     <DashboardLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My APIs</h1>
-          <p className="text-muted-foreground mt-1">Manage your registered endpoints</p>
+          <h1 className="text-3xl font-bold tracking-tight">My APIs</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your registered endpoints</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add API
-        </Button>
+        <Button onClick={() => setModalOpen(true)}>Add API</Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="glass-card overflow-hidden">
+        <div className="grid grid-cols-5 px-6 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
+          <span>Name</span>
+          <span>Endpoint</span>
+          <span className="text-center">Price/Call</span>
+          <span className="text-center">Calls</span>
+          <span className="text-right">Revenue</span>
+        </div>
         {userAPIs.map((api, i) => (
           <motion.div
             key={api.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            className="glass-card-hover p-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: i * 0.05 }}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-lg">{api.name}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    api.status === "active"
-                      ? "bg-success/15 text-success"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    {api.status}
-                  </span>
-                </div>
-                <p className="text-sm font-mono text-muted-foreground truncate">{api.endpoint}</p>
+            <Link
+              to={`/api-stats/${api.id}`}
+              className="grid grid-cols-5 px-6 py-4 border-b border-border/30 last:border-0 hover:bg-secondary/40 transition-colors items-center"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-sm">{api.name}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  api.status === "active"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {api.status}
+                </span>
               </div>
-
-              <div className="flex items-center gap-6 text-sm">
-                <div className="text-right">
-                  <p className="text-muted-foreground">Price/call</p>
-                  <p className="font-semibold">{api.pricePerCall} STX</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-muted-foreground">Calls</p>
-                  <p className="font-semibold">{(api.totalCalls / 1000).toFixed(1)}K</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-muted-foreground">Revenue</p>
-                  <p className="font-semibold text-primary">${api.revenue.toFixed(2)}</p>
-                </div>
-                <Link to={`/api-stats/${api.id}`}>
-                  <Button variant="ghost" size="sm">
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
+              <span className="text-xs font-mono text-muted-foreground truncate pr-4">{api.endpoint}</span>
+              <span className="text-sm text-center">{api.pricePerCall} STX</span>
+              <span className="text-sm text-center text-muted-foreground">{(api.totalCalls / 1000).toFixed(1)}K</span>
+              <span className="text-sm text-right font-semibold text-primary">${api.revenue.toFixed(2)}</span>
+            </Link>
           </motion.div>
         ))}
       </div>

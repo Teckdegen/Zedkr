@@ -22,6 +22,11 @@ export default defineConfig(({ mode }) => ({
     global: 'globalThis',
   },
   optimizeDeps: {
-    include: ['@stacks/connect', '@stacks/auth', '@stacks/network'],
+    include: ['@stacks/connect', '@stacks/auth', '@stacks/network', '@stacks/transactions', 'buffer'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/@stacks\/connect/, /@stacks\/auth/, /node_modules/],
+    },
   },
 }));

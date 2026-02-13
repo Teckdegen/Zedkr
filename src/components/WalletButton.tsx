@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Wallet } from "lucide-react";
-import { showConnect } from "@stacks/connect";
+import * as StacksConnect from "@stacks/connect";
 import { userSession, appDetails } from "@/lib/stacks-auth";
+
+// Vite/Blockchain lib interop handling
+const showConnect = (StacksConnect as any).showConnect || StacksConnect;
 
 const WalletButton = () => {
   const [userData, setUserData] = useState<any>(null);

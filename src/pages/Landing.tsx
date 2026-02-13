@@ -52,16 +52,13 @@ const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-secondary text-xs text-muted-foreground mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              Built on Stacks Blockchain
-            </div>
-            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tighter mb-6 leading-[0.9]">
-              Make Your APIs<br />
-              <span className="text-primary">x402 Powered</span>
+            <h1 className="text-5xl sm:text-7xl lg:text-[5.5rem] font-extrabold tracking-[-0.06em] mb-5 leading-[0.95]">
+              Your APIs.<br />
+              <span className="text-primary">x402 Powered.</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-              Turn your regular APIs into x402-powered endpoints in a minute — without writing a single line of code. ZedKr handles metering, billing, and payouts.
+            <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
+              Monetize any API endpoint in under a minute.<br className="hidden sm:block" />
+              No code. No setup. Just revenue.
             </p>
           </motion.div>
 
@@ -69,16 +66,10 @@ const Landing = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3"
           >
             <Link to="/dashboard">
-              <Button size="lg" className="text-sm font-medium px-6 rounded-md">
+              <Button size="lg" className="text-sm font-medium px-8 h-11 rounded-md">
                 Get Started
-              </Button>
-            </Link>
-            <Link to="/my-apis">
-              <Button size="lg" variant="outline" className="text-sm font-medium px-6 rounded-md">
-                Explore APIs
               </Button>
             </Link>
           </motion.div>

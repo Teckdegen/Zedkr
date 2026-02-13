@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import MyAPIs from "./pages/MyAPIs";
 import CreateAPI from "./pages/CreateAPI";
+import EditAPI from "./pages/EditAPI";
 import APIStats from "./pages/APIStats";
 import Analytics from "./pages/Analytics";
 import Billing from "./pages/Billing";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/my-apis" element={<MyAPIs />} />
           <Route path="/create-api" element={<CreateAPI />} />
+          <Route path="/edit-api/:id" element={<EditAPI />} />
           <Route path="/api-stats/:id" element={<APIStats />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/billing" element={<Billing />} />

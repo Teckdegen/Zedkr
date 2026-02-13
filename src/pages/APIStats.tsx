@@ -1,12 +1,14 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { userAPIs, callHistory, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { ArrowLeft, Activity, Clock, ShieldCheck, Layers, ExternalLink, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 const APIStats = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const api = userAPIs.find((a) => a.id === id) || userAPIs[0];
 
   return (
@@ -30,10 +32,29 @@ const APIStats = () => {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-widest ${api.status === 'active'
-              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-              : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
+        <div className="flex items-center gap-4 self-start md:self-auto">
+          <div className="flex items-center gap-2 mr-2">
+            <Link
+              to={`/edit-api/${api.id}`}
+              className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors py-1.5 px-3 rounded bg-white/5 border border-white/5"
+            >
+              Edit Project
+            </Link>
+            <button
+              onClick={() => {
+                if (confirm("Delete this entire API project?")) {
+                  toast.success("Project deleted");
+                  navigate("/my-apis");
+                }
+              }}
+              className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-rose-500 transition-colors py-1.5 px-3 rounded bg-rose-500/5 border border-rose-500/10"
+            >
+              Delete
+            </button>
+          </div>
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border uppercase tracking-widest ${api.status === 'active'
+            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+            : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
             }`}>
             <Activity className="w-3 h-3" />
             {api.status === 'active' ? 'Active' : 'Inactive'}

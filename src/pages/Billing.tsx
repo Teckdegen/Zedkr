@@ -11,14 +11,9 @@ const Billing = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-10">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tighter">Billing</h1>
-          <p className="text-zinc-500 text-sm mt-1 font-medium">Manage your earnings, payouts, and financial history.</p>
-        </div>
-        <Button className="bg-primary text-white hover:bg-emerald-500 font-bold rounded-full h-10 px-6 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-          <Wallet className="w-4 h-4 mr-2" /> Withdraw
-        </Button>
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold tracking-tighter">Billing</h1>
+        <p className="text-zinc-500 text-sm mt-1 font-medium">Manage your earnings, payouts, and financial history.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

@@ -11,15 +11,16 @@ const MyAPIs = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My APIs</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My APIs</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage your registered endpoints</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>Add API</Button>
+        <Button onClick={() => setModalOpen(true)} className="text-xs sm:text-sm">Add API</Button>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block glass-card overflow-hidden">
         <div className="grid grid-cols-5 px-6 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
           <span>Name</span>
           <span>Endpoint</span>
@@ -52,6 +53,37 @@ const MyAPIs = () => {
               <span className="text-sm text-center">{api.pricePerCall} STX</span>
               <span className="text-sm text-center text-muted-foreground">{(api.totalCalls / 1000).toFixed(1)}K</span>
               <span className="text-sm text-right font-semibold text-primary">${api.revenue.toFixed(2)}</span>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden flex flex-col gap-3">
+        {userAPIs.map((api, i) => (
+          <motion.div
+            key={api.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <Link to={`/api-stats/${api.id}`} className="glass-card p-4 block hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-sm">{api.name}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  api.status === "active"
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {api.status}
+                </span>
+              </div>
+              <p className="text-xs font-mono text-muted-foreground truncate mb-3">{api.endpoint}</p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{api.pricePerCall} STX/call</span>
+                <span className="text-muted-foreground">{(api.totalCalls / 1000).toFixed(1)}K calls</span>
+                <span className="font-semibold text-primary">${api.revenue.toFixed(2)}</span>
+              </div>
             </Link>
           </motion.div>
         ))}

@@ -4,7 +4,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, ArrowLeft, Globe, Zap, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -56,7 +55,6 @@ const CreateAPI = () => {
                     onClick={() => navigate(-1)}
                     className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-8 group"
                 >
-                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     <span className="text-sm font-medium">Back to APIs</span>
                 </button>
 
@@ -68,8 +66,7 @@ const CreateAPI = () => {
                 <form onSubmit={handleCreate} className="space-y-12 pb-24">
                     {/* API Info */}
                     <section className="vercel-card p-8">
-                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                            <Globe className="w-5 h-5 text-primary" />
+                        <h2 className="text-lg font-bold mb-6">
                             General Information
                         </h2>
                         <div className="space-y-6">
@@ -89,8 +86,7 @@ const CreateAPI = () => {
                     {/* Endpoints */}
                     <section className="space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-primary" />
+                            <h2 className="text-lg font-bold">
                                 Endpoints
                             </h2>
                             <Button
@@ -99,7 +95,7 @@ const CreateAPI = () => {
                                 variant="outline"
                                 className="rounded-full border-white/5 bg-white/5 hover:bg-white/10 text-xs font-bold"
                             >
-                                <Plus className="w-3 h-3 mr-2" /> Add Endpoint
+                                Add Endpoint
                             </Button>
                         </div>
 
@@ -149,10 +145,10 @@ const CreateAPI = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeEndpoint(endpoint.id)}
-                                                    className="p-2 text-zinc-600 hover:text-red-500 transition-colors"
+                                                    className="p-2 text-zinc-600 hover:text-red-500 transition-colors text-xs font-bold"
                                                     disabled={endpoints.length === 1}
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
+                                                    Remove
                                                 </button>
                                             </div>
                                         </div>
@@ -164,8 +160,7 @@ const CreateAPI = () => {
 
                     {/* Security / Advanced (Placeholder) */}
                     <section className="vercel-card p-8 opacity-50 cursor-not-allowed">
-                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
-                            <Shield className="w-5 h-5 text-zinc-500" />
+                        <h2 className="text-lg font-bold mb-6">
                             Advanced Security
                         </h2>
                         <p className="text-xs text-zinc-500">Rate limiting and developer key rotation will be available soon in Zedkr Pro.</p>

@@ -8,24 +8,24 @@ import { ChevronRight } from "lucide-react";
 
 const features = [
   {
-    title: "Instant API Registration",
-    desc: "Register any REST API in seconds and start earning per call.",
+    title: "Instant x402 Wrapping",
+    desc: "Wrap any public REST API in seconds and initiate 402 Payment Required flows.",
   },
   {
-    title: "Stacks Powered",
-    desc: "Built on Stacks blockchain for transparent, trustless payments.",
+    title: "Stacks x402 Protocol",
+    desc: "Leverage the x402 standard on Stacks for transparent, trustless API payments.",
   },
   {
-    title: "Real-time Analytics",
-    desc: "Track every call, monitor performance, and optimize revenue.",
+    title: "Real-time Payout Logs",
+    desc: "Monitor every monetized call and track your protocol earnings in real-time.",
   },
   {
-    title: "Global Distribution",
-    desc: "CDN-backed endpoints with 99.9% uptime guarantee.",
+    title: "Global Protocol Proxy",
+    desc: "Ultra-fast CDN-backed proxy endpoints that handle all payment verification.",
   },
   {
-    title: "Instant Payouts",
-    desc: "Withdraw earnings in STX anytime, no minimums.",
+    title: "Automated STX Settlements",
+    desc: "Receive earnings directly in your wallet as soon as calls are verified.",
   },
 ];
 
@@ -76,12 +76,12 @@ const Landing = () => {
             </div>
 
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter mb-8 vercel-gradient leading-[0.8] py-2">
-              MONETIZE<br />ANY API.
+              X402:<br />MONETIZE ANY API.
             </h1>
 
             <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-              Turn your API endpoints into automated revenue streams.<br />
-              Powered by x402 and the Stacks Blockchain.
+              Transform any public API endpoint into a revenue stream using the x402 protocol. <br />
+              Automated, decentralized payments powered by the Stacks Blockchain.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

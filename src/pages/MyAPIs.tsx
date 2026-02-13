@@ -17,7 +17,7 @@ const MyAPIs = () => {
           <h1 className="text-4xl font-bold tracking-tighter">My APIs</h1>
           <p className="text-zinc-500 text-sm mt-1 font-medium">Manage and monitor your registered API endpoints.</p>
         </div>
-        <Button onClick={() => setModalOpen(true)} className="bg-white text-black hover:bg-zinc-200 font-bold rounded-full h-10 px-6">
+        <Button onClick={() => setModalOpen(true)} className="bg-primary text-white hover:bg-emerald-500 font-bold rounded-full h-10 px-6 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
           <Plus className="w-4 h-4 mr-2" /> Add API
         </Button>
       </div>
@@ -51,8 +51,8 @@ const MyAPIs = () => {
               </div>
               <div className="flex justify-center">
                 <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${api.status === "active"
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                    : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
+                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                  : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
                   }`}>
                   <Activity className="w-2.5 h-2.5" />
                   {api.status.toUpperCase()}
@@ -82,8 +82,8 @@ const MyAPIs = () => {
                   <span className="text-[10px] font-mono text-zinc-500 truncate w-48">{api.endpoint}</span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${api.status === "active"
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                    : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
+                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                  : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
                   }`}>
                   {api.status.toUpperCase()}
                 </span>

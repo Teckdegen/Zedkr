@@ -79,7 +79,7 @@ const Landing = () => {
             </h1>
 
             <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-              Empowering developers to integrate the x402 protocol into any public API endpoint. <br />
+              Empowering developers to monetize any API with x402 in seconds, not hours. <br />
               Turn your code into a decentralized revenue stream on the Stacks Blockchain.
             </p>
 

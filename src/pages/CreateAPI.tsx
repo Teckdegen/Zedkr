@@ -18,7 +18,7 @@ const CreateAPI = () => {
     const navigate = useNavigate();
     const [apiName, setApiName] = useState("");
     const [endpoints, setEndpoints] = useState<EndpointRow[]>([
-        { id: "1", name: "Default Endpoint", path: "/v1/api", price: "0.005" }
+        { id: "1", name: "Default Endpoint", path: "https://api.example.com/v1/data", price: "0.005" }
     ]);
 
     const addEndpoint = () => {
@@ -44,6 +44,14 @@ const CreateAPI = () => {
             toast.error("Please enter an API name");
             return;
         }
+
+        // Basic URL validation
+        const invalidEndpoint = endpoints.find(e => !e.path.startsWith('http'));
+        if (invalidEndpoint) {
+            toast.error(`Invalid URL for ${invalidEndpoint.name || 'endpoint'}. Must start with http:// or https://`);
+            return;
+        }
+
         toast.success("API Project created successfully!");
         navigate("/my-apis");
     };
@@ -120,14 +128,13 @@ const CreateAPI = () => {
                                                 />
                                             </div>
                                             <div className="md:col-span-5 space-y-2">
-                                                <Label className="text-[10px] uppercase font-black tracking-widest text-zinc-500 ml-1">Path</Label>
+                                                <Label className="text-[10px] uppercase font-black tracking-widest text-zinc-500 ml-1">Target URL</Label>
                                                 <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-mono">/</span>
                                                     <Input
                                                         value={endpoint.path}
                                                         onChange={(e) => updateEndpoint(endpoint.id, "path", e.target.value)}
-                                                        placeholder="v1/weather"
-                                                        className="bg-zinc-900 border-white/5 h-10 rounded-lg text-sm pl-6 font-mono"
+                                                        placeholder="https://api.example.com/v1/weather"
+                                                        className="bg-zinc-900 border-white/5 h-10 rounded-lg text-sm font-mono"
                                                     />
                                                 </div>
                                             </div>

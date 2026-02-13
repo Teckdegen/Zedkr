@@ -42,7 +42,7 @@ const Landing = () => {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2 group">
               <div className="w-10 h-10 flex items-center justify-center transition-transform group-hover:scale-110">
-                <img src="/logo.png" alt="Zedkr Logo" className="w-full h-full object-contain" />
+                <img src="https://image2url.com/r2/default/images/1770964749157-969a1115-2925-4766-b377-26cf90473e42.png" alt="Zedkr Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-xl font-bold tracking-tight">Zedkr</span>
             </Link>

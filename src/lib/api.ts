@@ -201,8 +201,16 @@ export async function getSTXPriceUSD(): Promise<number> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/public/stx-price`);
     if (!response.ok) {
-      throw new Error('Failed to fetch STX price');
+      throw new Error(`HTTP ${response.status}`);
     }
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('STX price endpoint returned non-JSON response, using fallback');
+      return 1.50;
+    }
+    
     const data = await response.json();
     return data.price || 1.50; // Fallback to $1.50 if price unavailable
   } catch (error) {

@@ -67,31 +67,75 @@ const WalletButton = () => {
         return;
       }
 
-      fetch(`https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+      // Try multiple endpoints in case of SSL issues
+      const endpoints = [
+        `https://api.testnet.hiro.so/extended/v1/address/${stxAddress}/stx`,
+        `https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stxAddress}/stx`,
+        `https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stxAddress}/balances`,
+      ];
+
+      let fetchAttempt = 0;
+      const tryFetch = async () => {
+        if (fetchAttempt >= endpoints.length) {
+          console.error('All balance endpoints failed');
+          setBalance("0.00");
+          return;
+        }
+
+        try {
+          const response = await fetch(endpoints[fetchAttempt], {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
           }
-          return res.json();
-        })
-        .then(data => {
-          // Check multiple possible response structures
-          const balance = data?.stx?.balance || data?.stx?.total_sent || data?.balance?.stx;
+
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Non-JSON response');
+          }
+
+          const data = await response.json();
           
-          if (balance) {
+          // Handle different response structures
+          // For /stx endpoint: data.balance, data.total_sent, data.total_received
+          // For /balances endpoint: data.stx.balance
+          const balance = data?.balance || 
+                         data?.stx?.balance || 
+                         data?.stx?.total_sent || 
+                         data?.balance?.stx ||
+                         (data?.total_received && data?.total_sent ? 
+                          (parseInt(data.total_received) - parseInt(data.total_sent)) : null);
+          
+          if (balance !== null && balance !== undefined) {
             // Handle both string and number formats
             const balanceValue = typeof balance === 'string' ? parseInt(balance) : balance;
-            const bal = (balanceValue / 1000000).toFixed(2);
-            setBalance(bal);
+            if (!isNaN(balanceValue) && balanceValue >= 0) {
+              const bal = (balanceValue / 1000000).toFixed(2);
+              setBalance(bal);
+              return;
+            }
+          }
+          
+          // If we get here, balance wasn't found in expected format
+          throw new Error('Balance not found in response');
+        } catch (error) {
+          console.warn(`Balance fetch attempt ${fetchAttempt + 1} failed:`, error);
+          fetchAttempt++;
+          // Try next endpoint
+          if (fetchAttempt < endpoints.length) {
+            setTimeout(tryFetch, 500); // Small delay before retry
           } else {
-            console.warn('Balance not found in response:', data);
             setBalance("0.00");
           }
-        })
-        .catch((error) => {
-          console.error('Error fetching balance:', error);
-          setBalance("0.00");
-        });
+        }
+      };
+
+      tryFetch();
     } else {
       setBalance(null);
     }

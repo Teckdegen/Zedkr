@@ -34,6 +34,7 @@ const validateEndpointPath = (path: string): boolean => {
 const CreateAPI = () => {
     const navigate = useNavigate();
     const { user, loading: userLoading } = useUser();
+    const { stxToUSD, formatUSD } = useSTXPrice();
     const [apiName, setApiName] = useState("");
     const [apiNameSlug, setApiNameSlug] = useState("");
     const [imageUrl, setImageUrl] = useState("");

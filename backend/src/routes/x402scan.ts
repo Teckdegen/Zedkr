@@ -81,44 +81,45 @@ router.get('/x402/:username/:apiName/:endpointPath', async (req, res) => {
     if (endpoint.apis.image_url) {
       x402Schema.image = endpoint.apis.image_url;
     }
-      accepts: [
-        {
-          scheme: 'exact',
-          network: networkCAIP2,
-          amount: endpoint.price_microstx.toString(),
-          asset: 'STX',
-          payTo: developerWallet,
-          maxTimeoutSeconds: 300,
-          resource: monetizedUrl,
-          description: endpoint.endpoint_name,
-          mimeType: 'application/json',
-          // outputSchema is REQUIRED for x402scan registration
-          outputSchema: {
-            input: {
-              type: 'request',
-              method: req.method || 'GET',
-              description: `Call ${endpoint.endpoint_name} endpoint`,
-            },
-            output: {
-              type: 'object',
-              description: 'Response from the proxied API endpoint',
-              // We can't know the exact output schema without calling the original API
-              // So we provide a generic structure
-              properties: {
-                data: {
-                  type: 'any',
-                  description: 'Response data from the original API',
-                },
-                success: {
-                  type: 'boolean',
-                  description: 'Whether the request was successful',
-                },
+
+    // Add accepts array with x402 v2 format
+    x402Schema.accepts = [
+      {
+        scheme: 'exact',
+        network: networkCAIP2,
+        amount: endpoint.price_microstx.toString(),
+        asset: 'STX',
+        payTo: developerWallet,
+        maxTimeoutSeconds: 300,
+        resource: monetizedUrl,
+        description: endpoint.endpoint_name,
+        mimeType: 'application/json',
+        // outputSchema is REQUIRED for x402scan registration
+        outputSchema: {
+          input: {
+            type: 'request',
+            method: req.method || 'GET',
+            description: `Call ${endpoint.endpoint_name} endpoint`,
+          },
+          output: {
+            type: 'object',
+            description: 'Response from the proxied API endpoint',
+            // We can't know the exact output schema without calling the original API
+            // So we provide a generic structure
+            properties: {
+              data: {
+                type: 'any',
+                description: 'Response data from the original API',
+              },
+              success: {
+                type: 'boolean',
+                description: 'Whether the request was successful',
               },
             },
           },
         },
-      ],
-    };
+      },
+    ];
 
     // Return 402 Payment Required with schema (x402scan expects this)
     res.status(402).json(x402Schema);

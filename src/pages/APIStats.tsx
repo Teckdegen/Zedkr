@@ -2,13 +2,14 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
-import { ArrowLeft, Activity, Clock, ShieldCheck, Layers, ExternalLink, Zap } from "lucide-react";
+import { ArrowLeft, Activity, Clock, ShieldCheck, Layers, ExternalLink, Zap, Code } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
 import { useSTXPrice } from "@/hooks/useSTXPrice";
 import { supabase } from "@/lib/supabase";
+import CodeExample from "@/components/CodeExample";
 
 const APIStats = () => {
   const { id } = useParams();
@@ -18,6 +19,8 @@ const APIStats = () => {
   const [api, setApi] = useState<any>(null);
   const [callHistory, setCallHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEndpoint, setSelectedEndpoint] = useState<any>(null);
+  const [showCodeExample, setShowCodeExample] = useState(false);
   
   // Generate chart data from call history
   const revenueChartData = callHistory.length > 0 
@@ -260,8 +263,17 @@ const APIStats = () => {
                     <p className="text-xs font-bold text-zinc-300">{(endpoint.calls || 0)}</p>
                   </div>
                   <div className="h-4 w-px bg-white/10 mx-1" />
-                  <button className="p-2 text-zinc-500 hover:text-white transition-colors">
-                    <ExternalLink className="w-4 h-4" />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedEndpoint(endpoint);
+                      setShowCodeExample(true);
+                    }}
+                    className="p-2 text-zinc-500 hover:text-primary transition-colors"
+                    title="View integration code"
+                  >
+                    <Code className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -374,6 +386,25 @@ const APIStats = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Code Example Modal */}
+      {selectedEndpoint && (
+        <CodeExample
+          endpointUrl={
+            selectedEndpoint.monetized_url ||
+            (user?.username && (api.api_name_slug || api.apiNameSlug)
+              ? `https://zedkr.up.railway.app/${user.username}/${api.api_name_slug || api.apiNameSlug}/${selectedEndpoint.endpoint_path || selectedEndpoint.path}`
+              : '')
+          }
+          endpointName={selectedEndpoint.endpoint_name || selectedEndpoint.name || 'Endpoint'}
+          priceSTX={(selectedEndpoint.price || selectedEndpoint.price_microstx / 1000000) || 0}
+          isOpen={showCodeExample}
+          onClose={() => {
+            setShowCodeExample(false);
+            setSelectedEndpoint(null);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };

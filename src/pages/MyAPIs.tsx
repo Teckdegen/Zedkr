@@ -4,12 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Plus, ExternalLink, Activity, Layers } from "lucide-react";
 import { toast } from "sonner";
-import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
+import { getUserAPIsFromSupabase, deleteAPIFromSupabase, getAPICallStats } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
+import { supabase } from "@/lib/supabase";
 
 const MyAPIs = () => {
   const navigate = useNavigate();
   const { user, loading: userLoading } = useUser();
+  const { stxToUSD, formatUSD } = useSTXPrice();
   const [userAPIs, setUserAPIs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +30,51 @@ const MyAPIs = () => {
         setLoading(true);
         // Frontend reads directly from Supabase
         const apis = await getUserAPIsFromSupabase(user.id);
-        setUserAPIs(apis || []);
+        
+        // Calculate revenue and total calls for each API
+        const apisWithStats = await Promise.all(
+          (apis || []).map(async (api: any) => {
+            const endpointIds = (api.endpoints || []).map((e: any) => e.id);
+            
+            if (endpointIds.length === 0) {
+              return {
+                ...api,
+                revenue: 0, // In STX
+                totalCalls: 0,
+              };
+            }
+
+            // Get all API calls for this API's endpoints
+            const { data: callsData, error: callsError } = await supabase
+              .from('api_calls')
+              .select('amount_paid')
+              .in('endpoint_id', endpointIds);
+
+            if (callsError || !callsData) {
+              return {
+                ...api,
+                revenue: 0,
+                totalCalls: 0,
+              };
+            }
+
+            // Calculate revenue (convert microSTX to STX)
+            const revenueSTX = callsData.reduce((sum, call) => 
+              sum + (Number(call.amount_paid) || 0), 0
+            ) / 1000000;
+
+            // Calculate total calls
+            const totalCalls = callsData.length;
+
+            return {
+              ...api,
+              revenue: revenueSTX,
+              totalCalls: totalCalls,
+            };
+          })
+        );
+
+        setUserAPIs(apisWithStats);
       } catch (error: any) {
         console.error('Error fetching APIs:', error);
         toast.error('Failed to load APIs');
@@ -137,11 +184,18 @@ const MyAPIs = () => {
                 <div className="grid grid-cols-2 gap-4 mt-auto">
                   <div className="space-y-1">
                     <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Project Revenue</p>
-                    <p className="text-xl font-black text-white">${(api.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-xl font-black text-white">{formatUSD(stxToUSD(api.revenue || 0))}</p>
+                    {(api.revenue || 0) > 0 && (
+                      <p className="text-[9px] text-zinc-500">{(api.revenue || 0).toFixed(3)} STX</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Total Requests</p>
-                    <p className="text-xl font-black text-zinc-300">{((api.totalCalls || 0) / 1000).toFixed(1)}K</p>
+                    <p className="text-xl font-black text-zinc-300">
+                      {api.totalCalls >= 1000 
+                        ? `${(api.totalCalls / 1000).toFixed(1)}K` 
+                        : api.totalCalls.toString()}
+                    </p>
                   </div>
                 </div>
 

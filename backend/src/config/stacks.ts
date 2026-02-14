@@ -13,7 +13,9 @@ export const networkConfig = {
   network: network as 'testnet' | 'mainnet',
   stacksNetwork,
   isTestnet,
-  apiUrl: stacksNetwork.coreApiUrl,
+  apiUrl: network === 'mainnet' 
+    ? 'https://api.hiro.so'
+    : 'https://api.testnet.hiro.so',
   explorerUrl: isTestnet 
     ? 'https://explorer.stacks.co/?chain=testnet'
     : 'https://explorer.stacks.co',

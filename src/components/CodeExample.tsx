@@ -13,12 +13,14 @@ interface CodeExampleProps {
 
 const CodeExample = ({ endpointUrl, endpointName, priceSTX, isOpen, onClose }: CodeExampleProps) => {
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'wallet-connect' | 'private-key'>('wallet-connect');
 
-  const codeExample = `import { wrapAxiosWithPayment, privateKeyToAccount } from 'x402-stacks';
+  const walletConnectExample = `import { wrapAxiosWithPayment, privateKeyToAccount } from 'x402-stacks';
 import axios from 'axios';
 import { userSession } from '@stacks/connect';
 
 // Get user's private key from Stacks Connect session
+// This works when user has connected wallet via @stacks/connect
 const userData = userSession.loadUserData();
 const privateKey = userData.appPrivateKey;
 
@@ -35,8 +37,52 @@ const api = wrapAxiosWithPayment(
 );
 
 // Make paid request - payment handled automatically
+// x402-stacks will:
+// 1. Make initial request (gets 402 Payment Required)
+// 2. Sign payment payload with wallet
+// 3. Resubmit with payment-signature header
+// 4. Return API response
 const response = await api.get('${endpointUrl}');
-console.log('Response:', response.data);`;
+console.log('Response:', response.data);
+
+// Payment details are in response headers
+const paymentResponse = response.headers['payment-response'];
+console.log('Payment transaction:', paymentResponse);`;
+
+  const privateKeyExample = `import { wrapAxiosWithPayment, privateKeyToAccount } from 'x402-stacks';
+import axios from 'axios';
+
+// Your Stacks wallet private key (get from wallet settings)
+// IMPORTANT: Never commit private keys to git!
+// Store in environment variables or secure config
+const PRIVATE_KEY = process.env.STACKS_PRIVATE_KEY || 'your_private_key_here';
+
+// Create account from private key
+const account = privateKeyToAccount(PRIVATE_KEY, 'testnet');
+
+// Wrap axios with automatic x402 payment handling
+const api = wrapAxiosWithPayment(
+  axios.create({
+    baseURL: 'https://zedkr.up.railway.app',
+    timeout: 60000,
+  }),
+  account
+);
+
+// Make paid request - payment handled automatically
+// x402-stacks will:
+// 1. Make initial request (gets 402 Payment Required)
+// 2. Sign payment payload with private key
+// 3. Resubmit with payment-signature header
+// 4. Return API response
+const response = await api.get('${endpointUrl}');
+console.log('Response:', response.data);
+
+// Payment details are in response headers
+const paymentResponse = response.headers['payment-response'];
+console.log('Payment transaction:', paymentResponse);`;
+
+  const codeExample = activeTab === 'wallet-connect' ? walletConnectExample : privateKeyExample;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(codeExample);
@@ -91,6 +137,33 @@ console.log('Response:', response.data);`;
                   </button>
                 </div>
               </div>
+              
+              {/* Tabs */}
+              <div className="px-6 pt-4 border-b border-white/10">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('wallet-connect')}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                      activeTab === 'wallet-connect'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Wallet Connect
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('private-key')}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                      activeTab === 'private-key'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Private Key
+                  </button>
+                </div>
+              </div>
+
               <div className="flex-1 overflow-auto p-6">
                 <pre className="text-xs font-mono text-zinc-300 bg-zinc-950 p-4 rounded-lg border border-white/5 overflow-x-auto">
                   <code>{codeExample}</code>
@@ -98,7 +171,7 @@ console.log('Response:', response.data);`;
               </div>
               <div className="p-6 border-t border-white/10 bg-white/[0.01]">
                 <p className="text-[10px] text-zinc-500">
-                  Install: <span className="font-mono text-zinc-400">npm install x402-stacks axios @stacks/connect</span>
+                  Install: <span className="font-mono text-zinc-400">npm install x402-stacks axios{activeTab === 'wallet-connect' ? ' @stacks/connect' : ''}</span>
                 </p>
               </div>
             </div>

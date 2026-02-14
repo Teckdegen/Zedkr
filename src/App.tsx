@@ -12,6 +12,7 @@ import EditAPI from "./pages/EditAPI";
 import APIStats from "./pages/APIStats";
 import Analytics from "./pages/Analytics";
 import Billing from "./pages/Billing";
+import TestTerminal from "./pages/TestTerminal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/api-stats/:id" element={<ProtectedRoute><APIStats /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+          <Route path="/test-terminal" element={<ProtectedRoute><TestTerminal /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

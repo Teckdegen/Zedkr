@@ -54,50 +54,15 @@ ZedKr is built entirely on the **x402-stacks v2 protocol** (Coinbase x402 compat
 
 ## How It Works
 
-### For API Providers (Sellers)
+**1. Connect Your Wallet** - Link your Stacks wallet (no accounts needed)
 
-**Step 1: Connect Your Wallet**
-- Connect your Stacks wallet (Hiro Wallet, Xverse, etc.)
-- No accounts, no emails, just your wallet address
-- Your wallet becomes your identity and payment receiver
+**2. Point to Your API** - Enter your existing endpoint URL and set a price in STX
 
-**Step 2: Create Your API Project**
-- Enter your API name (e.g., "Weather API")
-- Add your existing endpoint URL (e.g., `https://api.weather.com/v1/forecast`)
-- Set your price in STX (e.g., 0.001 STX per call)
-- Optionally add an image for branding
+**3. Get Your x402 URL** - ZedKr generates `https://zedkr.com/yourname/api/endpoint` (custom domains coming soon)
 
-**Step 3: Get Your x402-Powered URL**
-- ZedKr generates: `https://zedkr.com/yourname/weather/forecast`
-- This URL is immediately active and x402-enabled
-- Every request requires STX payment via the x402 protocol
+**4. Start Earning** - Every request requires STX payment via x402. Payments go directly to your wallet.
 
-**Step 4: Share and Earn**
-- Share your monetized URL
-- Buyers make requests with x402-compatible clients
-- Payments are verified and settled via the x402-stacks facilitator
-- STX goes directly to your wallet
-- Track analytics, revenue, and call history in real-time
-
-### For API Consumers (Buyers)
-
-**Step 1: Discover APIs**
-- Browse the network or use x402scan to find monetized APIs
-- See pricing, descriptions, and usage examples
-- All APIs are x402-compatible and ready to use
-
-**Step 2: Make Paid Requests**
-- Use any x402-compatible client (or our wrapper)
-- The x402 protocol handles payment automatically
-- Your Stacks wallet signs the payment
-- Request is forwarded to the API
-- No accounts, no subscriptions, just pay-per-use
-
-**Step 3: Integrate**
-- Works with any HTTP client that supports x402
-- Perfect for AI agents, automation, and programmatic access
-- Stateless, HTTP-native, blockchain-verified
-- Payments are transparent and on-chain
+**That's it.** Your API is now x402-powered. Users make requests with x402-compatible clients, payments are verified on-chain, and you track everything in real-time.
 
 ---
 
@@ -180,25 +145,39 @@ Every ZedKr endpoint automatically supports x402scan registration:
 
 ---
 
-## Use Cases
+## Why This Matters
 
-### API Developers
-- **Monetize existing APIs** - No code changes, just point and configure
-- **Accept micropayments** - Perfect for usage-based services
-- **Enable AI agents** - Programmatic payment support
-- **Track revenue** - Real-time analytics and insights
+### The x402 Revolution
 
-### AI Agents & Automation
-- **Programmatic discovery** - Find and pay for APIs automatically
-- **No account creation** - Just wallet-based payments
-- **Stateless integration** - Perfect for autonomous agents
-- **x402-native** - Built for machine-to-machine payments
+ZedKr's ease of use is driving widespread x402 adoption across the API ecosystem. By making it possible to monetize any endpoint in seconds—with zero code changes—we're removing the biggest barrier to x402 integration.
 
-### Content Creators
-- **Monetize premium data** - Pay-per-use API access
-- **Direct payments** - Wallet-to-wallet transactions
-- **Global accessibility** - No credit card requirements
-- **Instant setup** - Start earning in seconds
+**The Impact:**
+- **API services are integrating x402** because it's now as simple as pointing to an endpoint
+- **No complex implementations** - ZedKr handles all the x402 protocol complexity
+- **Instant monetization** - Transform any API into a pay-per-use service immediately
+- **Custom domains coming soon** - Use your own domain for a fully branded experience
+
+This simplicity is why more and more API services are choosing x402-powered monetization over traditional payment methods.
+
+### Use Cases
+
+**API Developers:**
+- Monetize existing APIs without code changes
+- Accept micropayments for usage-based services
+- Enable AI agents with programmatic payment support
+- Track revenue with real-time analytics
+
+**AI Agents & Automation:**
+- Programmatically discover and pay for APIs
+- No account creation required
+- Stateless integration perfect for autonomous agents
+- x402-native built for machine-to-machine payments
+
+**Content Creators:**
+- Monetize premium data with pay-per-use API access
+- Direct wallet-to-wallet transactions
+- Global accessibility without credit card requirements
+- Instant setup to start earning in seconds
 
 ---
 
@@ -305,6 +284,7 @@ Client → ZedKr URL → x402 Payment Check → Stacks Blockchain Verification �
 
 ## Roadmap
 
+- [ ] **Custom Domain Support** - Connect your own domain for branded API endpoints (no more zedkr.com URLs)
 - [ ] Mainnet deployment
 - [ ] Multi-currency support (sBTC via x402)
 - [ ] Advanced analytics dashboard

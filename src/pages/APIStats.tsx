@@ -186,8 +186,8 @@ const APIStats = () => {
                   </div>
                   <p className="text-[10px] font-mono text-zinc-500 truncate">
                     {endpoint.monetized_url || (user?.username && (api.api_name_slug || api.apiNameSlug)
-                      ? `https://zedkr.com/${user.username}/${api.api_name_slug || api.apiNameSlug}/${endpoint.endpoint_path || endpoint.path}`
-                      : `https://zedkr.com/.../${endpoint.endpoint_path || endpoint.path}`
+                      ? `https://zedkr.up.railway.app/${user.username}/${api.api_name_slug || api.apiNameSlug}/${endpoint.endpoint_path || endpoint.path}`
+                      : `https://zedkr.up.railway.app/.../${endpoint.endpoint_path || endpoint.path}`
                     )}
                   </p>
                 </div>

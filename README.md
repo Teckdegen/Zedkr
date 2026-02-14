@@ -43,7 +43,7 @@ x402-stacks is an open payment standard built around **HTTP 402 Payment Required
 ZedKr is built entirely on the **x402-stacks v2 protocol** (Coinbase x402 compatible). Here's how it works:
 
 1. **You register your API** - Point to your existing endpoint, set a price in STX
-2. **ZedKr generates a monetized URL** - `https://zedkr.com/{username}/{apiName}/{endpoint}` (custom domains coming soon - connect your own domain for branded endpoints)
+2. **ZedKr generates a monetized URL** - `https://zedkr.up.railway.app/{username}/{apiName}/{endpoint}` (custom domains coming soon - connect your own domain for branded endpoints)
 3. **x402 middleware handles payments** - Every request requires STX payment via x402
 4. **Payments go directly to your wallet** - No intermediaries, instant settlement
 5. **x402scan discovery** - Your API is automatically discoverable by buyers and AI agents
@@ -58,7 +58,7 @@ ZedKr is built entirely on the **x402-stacks v2 protocol** (Coinbase x402 compat
 
 **2. Point to Your API** - Enter your existing endpoint URL and set a price in STX
 
-**3. Get Your x402 URL** - ZedKr generates `https://zedkr.com/yourname/api/endpoint` (custom domains coming soon)
+**3. Get Your x402 URL** - ZedKr generates `https://zedkr.up.railway.app/yourname/api/endpoint` (custom domains coming soon)
 
 **4. Start Earning** - Every request requires STX payment via x402. Payments go directly to your wallet.
 
@@ -81,7 +81,7 @@ ZedKr implements the full **x402-stacks v2 specification**:
 ### Payment Flow
 
 ```
-1. Client requests: GET https://zedkr.com/username/api/endpoint
+1. Client requests: GET https://zedkr.up.railway.app/username/api/endpoint
 2. Backend responds: 402 Payment Required
    - Includes payment-required header (base64-encoded)
    - Contains payment details: amount, payTo, network
@@ -97,7 +97,7 @@ ZedKr implements the full **x402-stacks v2 specification**:
 
 Every ZedKr endpoint automatically supports x402scan registration:
 
-- **Schema endpoint:** `https://zedkr.com/x402/{username}/{apiName}/{endpointPath}`
+- **Schema endpoint:** `https://zedkr.up.railway.app/x402/{username}/{apiName}/{endpointPath}`
 - **Returns:** Full x402 v2 schema with outputSchema
 - **Discovery:** Register on scan.stacksx402.com for AI agent discovery
 - **Compatibility:** Works with all x402-compatible tools and services
@@ -155,7 +155,7 @@ ZedKr's ease of use is driving widespread x402 adoption across the API ecosystem
 - **API services are integrating x402** because it's now as simple as pointing to an endpoint
 - **No complex implementations** - ZedKr handles all the x402 protocol complexity
 - **Instant monetization** - Transform any API into a pay-per-use service immediately
-- **Custom domains coming soon** - Connect your own domain instead of using zedkr.com URLs
+- **Custom domains coming soon** - Connect your own domain instead of using zedkr.up.railway.app URLs
 
 This simplicity is why more and more API services are choosing x402-powered monetization over traditional payment methods.
 
@@ -201,7 +201,7 @@ This simplicity is why more and more API services are choosing x402-powered mone
 - Click "Create"
 
 **3. Share Your Monetized URL**
-- Copy your generated URL: `https://zedkr.com/yourname/api/endpoint`
+- Copy your generated URL: `https://zedkr.up.railway.app/yourname/api/endpoint`
 - **Coming Soon:** Connect your own custom domain for branded API endpoints
 - Share it with users or register on x402scan
 - Start earning STX!
@@ -216,7 +216,7 @@ const account = privateKeyToAccount(privateKey, 'testnet');
 const api = wrapAxiosWithPayment(axios.create(), account);
 
 // Payment handled automatically via x402 protocol
-const response = await api.get('https://zedkr.com/username/api/endpoint');
+const response = await api.get('https://zedkr.up.railway.app/username/api/endpoint');
 ```
 
 **The x402 protocol handles:**
@@ -232,7 +232,7 @@ const response = await api.get('https://zedkr.com/username/api/endpoint');
 
 Once your endpoint is live, register it with x402scan:
 
-1. Visit your schema endpoint: `https://zedkr.com/x402/{username}/{apiName}/{endpointPath}`
+1. Visit your schema endpoint: `https://zedkr.up.railway.app/x402/{username}/{apiName}/{endpointPath}`
 2. Copy the URL
 3. Submit to [scan.stacksx402.com](https://scan.stacksx402.com)
 4. Your API is now discoverable by buyers and AI agents

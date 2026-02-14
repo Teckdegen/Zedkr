@@ -16,6 +16,14 @@ const APIStats = () => {
   const [api, setApi] = useState<any>(null);
   const [callHistory, setCallHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Generate chart data from call history
+  const revenueChartData = callHistory.length > 0 
+    ? callHistory.slice(0, 7).reverse().map((call, i) => ({
+        month: new Date(call.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        calls: 1,
+      }))
+    : [{ month: 'No data', calls: 0 }];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,9 +43,18 @@ const APIStats = () => {
             const calls = await Promise.all(
               endpointIds.map((endpointId: string) => getRecentAPICalls(endpointId, 10))
             );
-            setCallHistory(calls.flat().sort((a, b) => 
+            const allCalls = calls.flat().sort((a, b) => 
               new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-            ).slice(0, 20));
+            ).slice(0, 20).map((call: any) => ({
+              id: call.id,
+              timestamp: new Date(call.timestamp).toLocaleString(),
+              status: call.status_code || 'N/A',
+              latency: call.latency_ms || 0,
+              caller: call.caller_wallet || 'Unknown',
+            }));
+            setCallHistory(allCalls);
+          } else {
+            setCallHistory([]);
           }
         } else {
           navigate("/my-apis");
@@ -90,7 +107,7 @@ const APIStats = () => {
 
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tighter">{api.name || api.api_name}</h1>
+          <h1 className="text-4xl font-bold tracking-tighter">{api.api_name || api.name}</h1>
           <div className="flex items-center gap-3 mt-3">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/5">
               <Layers className="w-3 h-3 text-zinc-500" />
@@ -271,13 +288,13 @@ const APIStats = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {callHistory.map((c) => (
+              {callHistory.length > 0 ? callHistory.map((c) => (
                 <tr key={c.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="py-4 px-6 font-mono text-[11px] text-zinc-500">{c.timestamp}</td>
                   <td className="py-4 px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${c.status === 200
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${c.status === 200 || c.status === '200'
                       ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                      : c.status === 429
+                      : c.status === 429 || c.status === '429'
                         ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
                         : "bg-rose-500/10 text-rose-500 border-rose-500/20"
                       }`}>
@@ -287,17 +304,21 @@ const APIStats = () => {
                   <td className="py-4 px-6 text-sm text-zinc-300 font-bold">{c.latency}ms</td>
                   <td className="py-4 px-6 font-mono text-[10px] text-zinc-600 lowercase">{c.caller}</td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={4} className="py-8 px-6 text-center text-zinc-500 text-sm">No API calls yet</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile cards */}
         <div className="sm:hidden flex flex-col divide-y divide-white/5">
-          {callHistory.map((c) => (
+          {callHistory.length > 0 ? callHistory.map((c) => (
             <div key={c.id} className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${c.status === 200 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${c.status === 200 || c.status === '200' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"
                   }`}>
                   {c.status}
                 </span>
@@ -308,7 +329,9 @@ const APIStats = () => {
                 <span className="font-mono lowercase truncate ml-2 w-32">{c.caller}</span>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="p-5 text-center text-zinc-500 text-sm">No API calls yet</div>
+          )}
         </div>
       </motion.div>
     </DashboardLayout>

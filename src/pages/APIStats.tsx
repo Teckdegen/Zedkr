@@ -47,7 +47,7 @@ const APIStats = () => {
             // Get all API calls for this API's endpoints to calculate revenue and total calls
             const { data: allCallsData, error: callsError } = await supabase
               .from('api_calls')
-              .select('amount_paid, timestamp, status_code, latency_ms, caller_wallet')
+              .select('id, endpoint_id, amount_paid, timestamp, status_code, latency_ms, caller_wallet')
               .in('endpoint_id', endpointIds)
               .order('timestamp', { ascending: false });
 
@@ -60,6 +60,19 @@ const APIStats = () => {
               // Calculate total calls
               const totalCalls = allCallsData.length;
 
+              // Calculate call counts per endpoint
+              const endpointCallCounts: Record<string, number> = {};
+              allCallsData.forEach((call: any) => {
+                const endpointId = call.endpoint_id;
+                endpointCallCounts[endpointId] = (endpointCallCounts[endpointId] || 0) + 1;
+              });
+
+              // Add call counts to each endpoint
+              const endpointsWithCalls = (foundApi.endpoints || []).map((endpoint: any) => ({
+                ...endpoint,
+                calls: endpointCallCounts[endpoint.id] || 0,
+              }));
+
               // Get recent calls for display
               const recentCalls = allCallsData.slice(0, 20).map((call: any) => ({
                 id: call.id || Math.random().toString(),
@@ -71,27 +84,38 @@ const APIStats = () => {
 
               setCallHistory(recentCalls);
 
-              // Update API with calculated stats
+              // Update API with calculated stats and endpoints with call counts
               setApi({
                 ...foundApi,
                 revenue: totalRevenue,
                 totalCalls: totalCalls,
+                endpoints: endpointsWithCalls,
               });
             } else {
-              // No calls yet
+              // No calls yet - set all endpoints to 0 calls
+              const endpointsWithCalls = (foundApi.endpoints || []).map((endpoint: any) => ({
+                ...endpoint,
+                calls: 0,
+              }));
               setApi({
                 ...foundApi,
                 revenue: 0,
                 totalCalls: 0,
+                endpoints: endpointsWithCalls,
               });
               setCallHistory([]);
             }
           } else {
-            // No endpoints
+            // No endpoints - ensure endpoints have call counts
+            const endpointsWithCalls = (foundApi.endpoints || []).map((endpoint: any) => ({
+              ...endpoint,
+              calls: 0,
+            }));
             setApi({
               ...foundApi,
               revenue: 0,
               totalCalls: 0,
+              endpoints: endpointsWithCalls,
             });
             setCallHistory([]);
           }

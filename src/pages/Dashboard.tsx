@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { getUserAPIsFromSupabase, getAPICallStats } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
 import { useSTXPrice } from "@/hooks/useSTXPrice";
+import { supabase } from "@/lib/supabase";
 
 const Dashboard = () => {
   const { user, loading: userLoading } = useUser();
@@ -16,6 +17,8 @@ const Dashboard = () => {
     activeEndpoints: 0,
     recentPayments: 0, // In STX
   });
+  const [revenueChartData, setRevenueChartData] = useState<Array<{ month: string; revenue: number }>>([]);
+  const [usageChartData, setUsageChartData] = useState<Array<{ day: string; calls: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,12 +36,24 @@ const Dashboard = () => {
           (api.endpoints || []).map((e: any) => e.id)
         );
 
+        if (allEndpointIds.length === 0) {
+          setStats({
+            totalCalls: 0,
+            revenue: 0,
+            activeEndpoints: 0,
+            recentPayments: 0,
+          });
+          setRevenueChartData([]);
+          setUsageChartData([]);
+          return;
+        }
+
         const callStats = await getAPICallStats(allEndpointIds);
           
-          const totalCalls = callStats.length;
-          const revenue = callStats.reduce((sum: number, call: any) => 
-            sum + Number(call.amount_paid || 0), 0
-          ) / 1000000; // Convert to STX
+        const totalCalls = callStats.length;
+        const revenue = callStats.reduce((sum: number, call: any) => 
+          sum + Number(call.amount_paid || 0), 0
+        ) / 1000000; // Convert to STX
 
         const activeEndpoints = apis.reduce((sum: number, api: any) => 
           sum + (api.endpoints?.length || 0), 0
@@ -50,6 +65,86 @@ const Dashboard = () => {
           activeEndpoints,
           recentPayments: revenue,
         });
+
+        // Fetch revenue trend data (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const { data: revenueCalls, error: revenueError } = await supabase
+          .from('api_calls')
+          .select('amount_paid, timestamp')
+          .in('endpoint_id', allEndpointIds)
+          .gte('timestamp', thirtyDaysAgo.toISOString())
+          .order('timestamp', { ascending: true });
+
+        if (!revenueError && revenueCalls) {
+          // Group by day for last 30 days
+          const dailyRevenue: Record<string, number> = {};
+          
+          // Initialize last 30 days with 0
+          for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dayKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            dailyRevenue[dayKey] = 0;
+          }
+          
+          revenueCalls.forEach((call: any) => {
+            const date = new Date(call.timestamp);
+            const dayKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            if (dailyRevenue[dayKey] !== undefined) {
+              dailyRevenue[dayKey] += Number(call.amount_paid || 0) / 1000000; // Convert to STX
+            }
+          });
+
+          setRevenueChartData(
+            Object.entries(dailyRevenue).map(([month, revenue]) => ({
+              month,
+              revenue: Number(revenue.toFixed(6)),
+            }))
+          );
+        }
+
+        // Fetch daily usage data (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const { data: usageCalls, error: usageError } = await supabase
+          .from('api_calls')
+          .select('timestamp')
+          .in('endpoint_id', allEndpointIds)
+          .gte('timestamp', sevenDaysAgo.toISOString())
+          .order('timestamp', { ascending: true });
+
+        if (!usageError && usageCalls) {
+          // Group by day for last 7 days
+          const dailyUsage: Record<string, number> = {};
+          
+          // Initialize last 7 days with 0
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
+            dailyUsage[dayKey] = 0;
+          }
+          
+          usageCalls.forEach((call: any) => {
+            const date = new Date(call.timestamp);
+            const dayKey = date.toLocaleDateString('en-US', { weekday: 'short' });
+            
+            if (dailyUsage[dayKey] !== undefined) {
+              dailyUsage[dayKey] += 1;
+            }
+          });
+
+          setUsageChartData(
+            Object.entries(dailyUsage).map(([day, calls]) => ({
+              day,
+              calls,
+            }))
+          );
+        }
       } catch (error) {
         console.error('Error fetching stats:', error);
       } finally {
@@ -131,7 +226,7 @@ const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[]}>
+              <AreaChart data={revenueChartData.length > 0 ? revenueChartData : [{ month: 'No data', revenue: 0 }]}>
                 <defs>
                   <linearGradient id="dashRevGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#22c55e" stopOpacity={0.15} />
@@ -187,7 +282,7 @@ const Dashboard = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[]}>
+              <BarChart data={usageChartData.length > 0 ? usageChartData : [{ day: 'No data', calls: 0 }]}>
                 <XAxis
                   dataKey="day"
                   stroke="#1a1a1a"

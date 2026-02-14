@@ -182,12 +182,12 @@ const APIStats = () => {
               Delete
             </button>
           </div>
-          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border uppercase tracking-widest ${api.status === 'active'
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border uppercase tracking-widest ${(api.endpoints || []).some((e: any) => e.active !== false)
             ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
             : "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
             }`}>
             <Activity className="w-3 h-3" />
-            {api.status === 'active' ? 'Active' : 'Inactive'}
+            {(api.endpoints || []).some((e: any) => e.active !== false) ? 'Active' : 'Inactive'}
           </span>
         </div>
       </div>

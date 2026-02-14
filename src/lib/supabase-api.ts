@@ -254,7 +254,11 @@ export async function getUserAPIsFromSupabase(userId: string) {
     return [];
   }
 
-  return apis || [];
+  // Add status field based on whether API has active endpoints
+  return (apis || []).map((api: any) => ({
+    ...api,
+    status: (api.endpoints || []).some((e: any) => e.active !== false) ? 'active' : 'inactive',
+  }));
 }
 
 /**

@@ -43,7 +43,7 @@ x402-stacks is an open payment standard built around **HTTP 402 Payment Required
 ZedKr is built entirely on the **x402-stacks v2 protocol** (Coinbase x402 compatible). Here's how it works:
 
 1. **You register your API** - Point to your existing endpoint, set a price in STX
-2. **ZedKr generates a monetized URL** - `https://zedkr.com/{username}/{apiName}/{endpoint}`
+2. **ZedKr generates a monetized URL** - `https://zedkr.com/{username}/{apiName}/{endpoint}` (custom domains coming soon - connect your own domain for branded endpoints)
 3. **x402 middleware handles payments** - Every request requires STX payment via x402
 4. **Payments go directly to your wallet** - No intermediaries, instant settlement
 5. **x402scan discovery** - Your API is automatically discoverable by buyers and AI agents
@@ -155,7 +155,7 @@ ZedKr's ease of use is driving widespread x402 adoption across the API ecosystem
 - **API services are integrating x402** because it's now as simple as pointing to an endpoint
 - **No complex implementations** - ZedKr handles all the x402 protocol complexity
 - **Instant monetization** - Transform any API into a pay-per-use service immediately
-- **Custom domains coming soon** - Use your own domain for a fully branded experience
+- **Custom domains coming soon** - Connect your own domain instead of using zedkr.com URLs
 
 This simplicity is why more and more API services are choosing x402-powered monetization over traditional payment methods.
 
@@ -202,6 +202,7 @@ This simplicity is why more and more API services are choosing x402-powered mone
 
 **3. Share Your Monetized URL**
 - Copy your generated URL: `https://zedkr.com/yourname/api/endpoint`
+- **Coming Soon:** Connect your own custom domain for branded API endpoints
 - Share it with users or register on x402scan
 - Start earning STX!
 
@@ -279,19 +280,6 @@ Client → ZedKr URL → x402 Payment Check → Stacks Blockchain Verification �
 - **x402 protocol security** - Built-in replay protection and signature verification
 - **HTTPS only** - All endpoints require secure connections
 - **Stateless payments** - No session management, every request is independent
-
----
-
-## Roadmap
-
-- [ ] **Custom Domain Support** - Connect your own domain for branded API endpoints (no more zedkr.com URLs)
-- [ ] Mainnet deployment
-- [ ] Multi-currency support (sBTC via x402)
-- [ ] Advanced analytics dashboard
-- [ ] API rate limiting
-- [ ] Webhook notifications
-- [ ] API versioning
-- [ ] Developer SDK for x402 integration
 
 ---
 

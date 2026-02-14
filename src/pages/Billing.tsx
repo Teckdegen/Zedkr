@@ -7,11 +7,13 @@ import { ArrowUpRight, History, Wallet } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 const Billing = () => {
   const { user, loading: userLoading } = useUser();
+  const { stxToUSD, formatUSD } = useSTXPrice();
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0); // In STX
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -122,8 +124,8 @@ const Billing = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <StatCard 
               title="Total Earned" 
-              value={`$${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-              change="All time" 
+              value={formatUSD(stxToUSD(totalEarnings))} 
+              change={`${totalEarnings.toFixed(3)} STX`} 
               delay={0} 
             />
             <StatCard 
@@ -134,8 +136,8 @@ const Billing = () => {
             />
             <StatCard 
               title="Available Balance" 
-              value={`$${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-              change="In wallet" 
+              value={formatUSD(stxToUSD(totalEarnings))} 
+              change={`${totalEarnings.toFixed(3)} STX`} 
               delay={0.2} 
             />
           </div>
@@ -221,7 +223,10 @@ const Billing = () => {
                     </div>
                   </td>
                   <td className="py-4 px-6">
-                    <span className="text-sm font-black text-white">{t.amount} STX</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-white">{formatUSD(stxToUSD(t.amount))}</span>
+                      <span className="text-[10px] text-zinc-500">{t.amount.toFixed(3)} STX</span>
+                    </div>
                   </td>
                   <td className="py-4 px-6">
                     <span className="text-[10px] font-mono text-zinc-600 truncate w-32 inline-block">{t.txHash}</span>
@@ -242,7 +247,10 @@ const Billing = () => {
             <div key={t.id} className="p-5 hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold">{t.api}</span>
-                <span className="font-black text-sm text-white">{t.amount} STX</span>
+                <div className="flex flex-col items-end">
+                  <span className="font-black text-sm text-white">{formatUSD(stxToUSD(t.amount))}</span>
+                  <span className="text-[10px] text-zinc-500">{t.amount.toFixed(3)} STX</span>
+                </div>
               </div>
               <div className="flex items-center justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                 <span>{t.date}</span>

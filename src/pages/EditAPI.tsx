@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { getUserAPIsFromSupabase, updateAPIInSupabase, updateEndpointInSupabase, deleteEndpointFromSupabase } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
 import { supabase } from "@/lib/supabase";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 interface EndpointRow {
     id: string;
@@ -29,6 +30,7 @@ const EditAPI = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user, loading: userLoading } = useUser();
+    const { stxToUSD, formatUSD } = useSTXPrice();
     const [apiName, setApiName] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [endpoints, setEndpoints] = useState<EndpointRow[]>([]);
@@ -367,6 +369,11 @@ const EditAPI = () => {
                                                     onChange={(e) => updateEndpoint(endpoint.id, "price", e.target.value)}
                                                     className="bg-zinc-900 border-white/5 h-10 rounded-lg text-sm"
                                                 />
+                                                {endpoint.price && parseFloat(endpoint.price) > 0 && (
+                                                    <p className="text-[10px] text-zinc-500 ml-1">
+                                                        ≈ {formatUSD(stxToUSD(parseFloat(endpoint.price) || 0))}
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="md:col-span-1 flex justify-center pb-1">
                                                 {endpoint.isExisting ? (

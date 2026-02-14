@@ -5,14 +5,16 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { getUserAPIsFromSupabase, getAPICallStats } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 const Dashboard = () => {
   const { user, loading: userLoading } = useUser();
+  const { stxToUSD, formatUSD } = useSTXPrice();
   const [stats, setStats] = useState({
     totalCalls: 0,
-    revenue: 0,
+    revenue: 0, // In STX
     activeEndpoints: 0,
-    recentPayments: 0,
+    recentPayments: 0, // In STX
   });
   const [loading, setLoading] = useState(true);
 
@@ -96,8 +98,8 @@ const Dashboard = () => {
         />
         <StatCard 
           title="Revenue" 
-          value={`$${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-          change="All time" 
+          value={formatUSD(stxToUSD(stats.revenue))} 
+          change={`${stats.revenue.toFixed(3)} STX`} 
           delay={0.1} 
         />
         <StatCard 
@@ -108,8 +110,8 @@ const Dashboard = () => {
         />
         <StatCard 
           title="Recent Payout" 
-          value={`$${stats.recentPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-          change="Total" 
+          value={formatUSD(stxToUSD(stats.recentPayments))} 
+          change={`${stats.recentPayments.toFixed(3)} STX`} 
           delay={0.3} 
         />
       </div>

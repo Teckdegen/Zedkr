@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { createAPIInSupabase } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 interface EndpointRow {
     id: string;
@@ -271,6 +272,11 @@ const CreateAPI = () => {
                                                     onChange={(e) => updateEndpoint(endpoint.id, "price", e.target.value)}
                                                     className="bg-zinc-900 border-white/5 h-10 rounded-lg text-sm"
                                                 />
+                                                {endpoint.price && parseFloat(endpoint.price) > 0 && (
+                                                    <p className="text-[10px] text-zinc-500 ml-1">
+                                                        ≈ {formatUSD(stxToUSD(parseFloat(endpoint.price) || 0))}
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="md:col-span-1 flex justify-center pb-1">
                                                 <button

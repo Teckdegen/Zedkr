@@ -8,11 +8,13 @@ import { useState, useEffect } from "react";
 import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
 import { getRecentAPICalls } from "@/lib/supabase-api";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 const APIStats = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading: userLoading } = useUser();
+  const { stxToUSD, formatUSD } = useSTXPrice();
   const [api, setApi] = useState<any>(null);
   const [callHistory, setCallHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,7 @@ const APIStats = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Project Revenue", value: `$${(api.revenue || 0).toLocaleString()}`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
+          { label: "Project Revenue", value: formatUSD(stxToUSD(api.revenue || 0)), subtitle: `${(api.revenue || 0).toFixed(3)} STX`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
           { label: "Total Requests", value: `${((api.totalCalls || 0) / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
           { label: "Av. Latency", value: "42ms", icon: <Clock className="w-3 h-3 text-zinc-500" /> },
         ].map((s, i) => (
@@ -174,6 +176,7 @@ const APIStats = () => {
               <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">{s.label}</p>
             </div>
             <p className="text-3xl font-black tracking-tighter">{s.value}</p>
+            {s.subtitle && <p className="text-[10px] text-zinc-500 mt-1">{s.subtitle}</p>}
           </motion.div>
         ))}
       </div>
@@ -212,6 +215,9 @@ const APIStats = () => {
                   <div className="text-right">
                     <p className="text-[10px] uppercase font-bold text-zinc-600 tracking-tighter">Price</p>
                     <p className="text-xs font-bold text-zinc-300">
+                      {formatUSD(stxToUSD((endpoint.price || endpoint.price_microstx / 1000000) || 0))}
+                    </p>
+                    <p className="text-[10px] text-zinc-500">
                       {((endpoint.price || endpoint.price_microstx / 1000000) || 0).toFixed(3)} STX
                     </p>
                   </div>

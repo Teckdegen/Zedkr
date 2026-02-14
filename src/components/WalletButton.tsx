@@ -58,8 +58,8 @@ const WalletButton = () => {
 
   useEffect(() => {
     if (userData) {
-      const stxAddress = userData.profile.stxAddress.mainnet || userData.profile.stxAddress.testnet;
-      fetch(`https://stacks-node-api.mainnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
+      const stxAddress = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+      fetch(`https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
         .then(res => res.json())
         .then(data => {
           if (data?.stx?.balance) {

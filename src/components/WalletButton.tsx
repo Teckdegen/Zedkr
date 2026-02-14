@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { User, Wallet, LogOut, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { userSession, appDetails, showConnect } from "@/lib/stacks-auth";
+import { registerUserByWallet, setUsername, getUserByWallet } from "@/lib/supabase-api";
 
 const WalletButton = () => {
   const navigate = useNavigate();
@@ -19,22 +20,34 @@ const WalletButton = () => {
   useEffect(() => {
     try {
       if (userSession.isSignInPending()) {
-        userSession.handlePendingSignIn().then((data) => {
+        userSession.handlePendingSignIn().then(async (data) => {
           setUserData(data);
-          const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
-          const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-          if (!savedNickname) {
+          const stxAddress = data.profile.stxAddress.testnet || data.profile.stxAddress.mainnet;
+          
+          // Register user in Supabase (creates if doesn't exist)
+          const user = await registerUserByWallet(stxAddress);
+          
+          if (user && !user.username) {
+            // No username set - show modal
             setShowModal(true);
-          } else {
-            setNickname(savedNickname);
+          } else if (user?.username) {
+            // User exists with username - go to dashboard
+            setNickname(user.username);
+            navigate("/dashboard");
           }
         });
       } else if (userSession.isUserSignedIn()) {
         const data = userSession.loadUserData();
         setUserData(data);
-        const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
-        const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-        if (savedNickname) setNickname(savedNickname);
+        const stxAddress = data.profile.stxAddress.testnet || data.profile.stxAddress.mainnet;
+        
+        // Get user from Supabase
+        const user = await getUserByWallet(stxAddress);
+        if (user?.username) {
+          setNickname(user.username);
+        } else if (user && !user.username) {
+          setShowModal(true);
+        }
       }
     } catch (err) {
       console.error("Session check failed", err);
@@ -91,15 +104,21 @@ const WalletButton = () => {
         connectFn({
           appDetails,
           userSession,
-          onFinish: () => {
+          onFinish: async () => {
             const data = userSession.loadUserData();
             setUserData(data);
-            const stxAddress = data.profile.stxAddress.mainnet || data.profile.stxAddress.testnet;
-            const savedNickname = localStorage.getItem(`zedkr_nickname_${stxAddress}`);
-            if (!savedNickname) {
+            const stxAddress = data.profile.stxAddress.testnet || data.profile.stxAddress.mainnet;
+            
+            // Register user in Supabase (creates if doesn't exist)
+            const user = await registerUserByWallet(stxAddress);
+            
+            if (user && !user.username) {
+              // No username - show modal to set it
               setShowModal(true);
-            } else {
-              setNickname(savedNickname);
+            } else if (user?.username) {
+              // User exists with username - go to dashboard
+              setNickname(user.username);
+              navigate("/dashboard");
             }
           },
         });
@@ -110,13 +129,24 @@ const WalletButton = () => {
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tempNickname.trim() && userData) {
-      const stxAddress = userData.profile.stxAddress.mainnet || userData.profile.stxAddress.testnet;
-      setNickname(tempNickname);
-      setShowModal(false);
-      localStorage.setItem(`zedkr_nickname_${stxAddress}`, tempNickname);
+      const stxAddress = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+      
+      try {
+        // Set username in Supabase
+        const updatedUser = await setUsername(stxAddress, tempNickname.toLowerCase());
+        if (updatedUser) {
+          setNickname(updatedUser.username || tempNickname);
+          setShowModal(false);
+          toast.success('Username registered successfully!');
+          // Navigate to dashboard after setting username
+          navigate("/dashboard");
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to register username');
+      }
     }
   };
 

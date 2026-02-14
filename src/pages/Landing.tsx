@@ -2,9 +2,10 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import WalletButton from "@/components/WalletButton";
-import { topAPIs, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getTotalNetworkRevenue, getTopAPIs } from "@/lib/supabase-api";
 
 const features = [
   {
@@ -30,6 +31,47 @@ const features = [
 ];
 
 const Landing = () => {
+  const [stats, setStats] = useState<{
+    totalNetworkRevenue: number;
+    totalNetworkRevenueFormatted: string;
+    topAPIs: Array<{
+      id: string;
+      name: string;
+      username: string | null;
+      revenue: number;
+      revenueFormatted: string;
+      totalCalls: number;
+    }>;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const totalRevenue = await getTotalNetworkRevenue();
+        const topAPIs = await getTopAPIs(4);
+
+        setStats({
+          totalNetworkRevenue: totalRevenue,
+          totalNetworkRevenueFormatted: `$${totalRevenue.toFixed(2)}`,
+          topAPIs,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setStats({
+          totalNetworkRevenue: 0,
+          totalNetworkRevenueFormatted: '$0.00',
+          topAPIs: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-white">
       {/* Grid Overlay */}
@@ -109,25 +151,31 @@ const Landing = () => {
                 <div>
                   <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-2">Network Revenue</h3>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-5xl md:text-7xl font-bold tracking-tighter text-white">$12,847.52</span>
-                    <span className="text-primary text-sm font-bold">+23.4%</span>
+                    <span className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
+                      {loading ? '...' : (stats?.totalNetworkRevenueFormatted || '$0.00')}
+                    </span>
+                    <span className="text-primary text-sm font-bold">All Time</span>
                   </div>
                 </div>
                 <div className="flex gap-12">
                   <div>
                     <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-1">Active APIs</h3>
-                    <p className="text-2xl font-bold tracking-tight text-white">1,248</p>
+                    <p className="text-2xl font-bold tracking-tight text-white">
+                      {loading ? '...' : (stats?.topAPIs.length || 0)}
+                    </p>
                   </div>
                   <div>
-                    <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-1">Total Calls</h3>
-                    <p className="text-2xl font-bold tracking-tight text-white">8.4M</p>
+                    <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-1">Top APIs</h3>
+                    <p className="text-2xl font-bold tracking-tight text-white">
+                      {loading ? '...' : (stats?.topAPIs.length || 0)}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueChartData}>
+                  <AreaChart data={[]}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.2} />
@@ -148,12 +196,21 @@ const Landing = () => {
             </div>
 
             <div className="border-t border-white/5 grid grid-cols-2 md:grid-cols-4 divide-x divide-white/5 bg-white/[0.01]">
-              {topAPIs.slice(0, 4).map((api) => (
-                <div key={api.name} className="p-4 flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase">{api.name}</span>
-                  <span className="text-sm font-bold text-primary">{api.revenue}</span>
-                </div>
-              ))}
+              {loading ? (
+                <div className="p-4 col-span-4 text-center text-zinc-500">Loading...</div>
+              ) : stats?.topAPIs && stats.topAPIs.length > 0 ? (
+                stats.topAPIs.slice(0, 4).map((api) => (
+                  <div key={api.id} className="p-4 flex flex-col gap-1">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase">{api.name}</span>
+                    <span className="text-sm font-bold text-primary">{api.revenueFormatted}</span>
+                    {api.username && (
+                      <span className="text-[9px] text-zinc-600 mt-1">@{api.username}</span>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 col-span-4 text-center text-zinc-500">No APIs yet</div>
+              )}
             </div>
           </motion.div>
         </div>

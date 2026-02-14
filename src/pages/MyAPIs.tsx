@@ -1,21 +1,57 @@
 import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { userAPIs as initialAPIs } from "@/data/mockData";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, ExternalLink, Activity, Layers } from "lucide-react";
 import { toast } from "sonner";
+import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
+import { useUser } from "@/hooks/useUser";
 
 const MyAPIs = () => {
   const navigate = useNavigate();
-  const [userAPIs, setUserAPIs] = useState(initialAPIs);
+  const { user, loading: userLoading } = useUser();
+  const [userAPIs, setUserAPIs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  // Fetch user's APIs from Supabase (frontend reads directly)
+  useEffect(() => {
+    const fetchAPIs = async () => {
+      if (userLoading) return;
+      
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Frontend reads directly from Supabase
+        const apis = await getUserAPIsFromSupabase(user.id);
+        setUserAPIs(apis || []);
+      } catch (error: any) {
+        console.error('Error fetching APIs:', error);
+        toast.error('Failed to load APIs');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAPIs();
+  }, [user, userLoading]);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (confirm("Are you sure you want to delete this API project? All endpoints will be removed.")) {
-      setUserAPIs(prev => prev.filter(api => api.id !== id));
-      toast.success("API Project deleted successfully");
+      try {
+        if (!user) return;
+        // Frontend deletes directly from Supabase
+        await deleteAPIFromSupabase(user.id, id);
+        setUserAPIs(prev => prev.filter(api => api.id !== id));
+        toast.success("API Project deleted successfully");
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete API');
+      }
     }
   };
 
@@ -24,6 +60,28 @@ const MyAPIs = () => {
     e.stopPropagation();
     navigate(`/edit-api/${id}`);
   };
+
+  if (loading || userLoading) {
+    return (
+      <DashboardLayout>
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold tracking-tighter">My APIs</h1>
+          <p className="text-zinc-500 text-sm mt-1 font-medium">Loading...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold tracking-tighter">My APIs</h1>
+          <p className="text-zinc-500 text-sm mt-1 font-medium">Please connect your wallet to view your APIs.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -65,11 +123,11 @@ const MyAPIs = () => {
                       <Activity className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-colors" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-white group-hover:text-primary transition-colors">{api.name}</h3>
+                      <h3 className="font-bold text-white group-hover:text-primary transition-colors">{api.name || api.api_name}</h3>
                       <div className="flex items-center gap-1.5 mt-1">
                         <Layers className="w-3 h-3 text-zinc-500" />
                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
-                          {api.endpoints.length} Endpoint{api.endpoints.length !== 1 ? 's' : ''}
+                          {api.endpoints?.length || 0} Endpoint{(api.endpoints?.length || 0) !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -79,11 +137,11 @@ const MyAPIs = () => {
                 <div className="grid grid-cols-2 gap-4 mt-auto">
                   <div className="space-y-1">
                     <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Project Revenue</p>
-                    <p className="text-xl font-black text-white">${api.revenue.toLocaleString()}</p>
+                    <p className="text-xl font-black text-white">${(api.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] uppercase font-black tracking-widest text-zinc-600">Total Requests</p>
-                    <p className="text-xl font-black text-zinc-300">{(api.totalCalls / 1000).toFixed(1)}K</p>
+                    <p className="text-xl font-black text-zinc-300">{((api.totalCalls || 0) / 1000).toFixed(1)}K</p>
                   </div>
                 </div>
 

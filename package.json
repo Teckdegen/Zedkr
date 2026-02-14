@@ -45,6 +45,7 @@
     "@stacks/connect": "latest",
     "@stacks/network": "latest",
     "@stacks/transactions": "latest",
+    "@supabase/supabase-js": "^2.39.3",
     "@tanstack/react-query": "^5.83.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",

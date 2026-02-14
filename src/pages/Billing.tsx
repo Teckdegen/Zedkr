@@ -1,13 +1,106 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { transactions, earningsChartData } from "@/data/mockData";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import StatCard from "@/components/StatCard";
 import { ArrowUpRight, History, Wallet } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/lib/supabase";
 
 const Billing = () => {
-  const totalEarnings = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const { user, loading: userLoading } = useUser();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (userLoading || !user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Get user's APIs (RLS ensures user can only see their own APIs)
+        const { data: apis, error: apisError } = await supabase
+          .from('apis')
+          .select('id, endpoints(id)')
+          .eq('user_id', user.id); // Filter by user_id - RLS enforces this
+
+        if (apisError) {
+          console.error('Error fetching user APIs:', apisError);
+          setTransactions([]);
+          setTotalEarnings(0);
+          setLoading(false);
+          return;
+        }
+
+        const endpointIds = apis?.flatMap((api: any) => 
+          (api.endpoints || []).map((e: any) => e.id)
+        ) || [];
+
+        if (endpointIds.length === 0) {
+          setTransactions([]);
+          setTotalEarnings(0);
+          setLoading(false);
+          return;
+        }
+
+        // Get API calls (transactions) for user's endpoints only
+        // RLS policy ensures users can only see calls for their own endpoints
+        const { data: calls, error } = await supabase
+          .from('api_calls')
+          .select(`
+            *,
+            endpoints!inner(
+              id,
+              endpoint_name,
+              apis!inner(
+                id,
+                api_name,
+                user_id
+              )
+            )
+          `)
+          .in('endpoint_id', endpointIds)
+          .eq('endpoints.apis.user_id', user.id) // Extra filter to ensure only user's APIs
+          .order('timestamp', { ascending: false })
+          .limit(50);
+
+        if (error) {
+          console.error('Error fetching transactions:', error);
+          setTransactions([]);
+          setTotalEarnings(0);
+        } else {
+          const formattedTransactions = (calls || []).map((call: any) => ({
+            id: call.id,
+            date: new Date(call.timestamp).toLocaleDateString(),
+            from: call.caller_wallet?.slice(0, 6) + '...' + call.caller_wallet?.slice(-4) || 'Unknown',
+            amount: Number(call.amount_paid || 0) / 1000000, // Convert to STX
+            api: call.endpoints?.apis?.api_name || 'Unknown API',
+            txHash: call.tx_hash,
+          }));
+
+          const total = formattedTransactions.reduce((sum, t) => sum + t.amount, 0);
+          setTransactions(formattedTransactions);
+          setTotalEarnings(total);
+        }
+      } catch (error) {
+        console.error('Error fetching billing data:', error);
+        setTransactions([]);
+        setTotalEarnings(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [user, userLoading]);
+
+  // Empty chart data for now
+  const earningsChartData: Array<{ week: string; earnings: number }> = [];
 
   return (
     <DashboardLayout>
@@ -16,11 +109,38 @@ const Billing = () => {
         <p className="text-zinc-500 text-sm mt-1 font-medium">Manage your earnings, payouts, and financial history.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard title="Total Earned" value={`$${totalEarnings.toLocaleString()}`} change="All time" delay={0} />
-        <StatCard title="This Month" value="$3,240.50" change="+18.4%" delay={0.1} />
-        <StatCard title="Available Balance" value="$1,847.20" change="Ready" delay={0.2} />
-      </div>
+      {loading || userLoading ? (
+        <div className="mb-10">
+          <p className="text-zinc-500">Loading billing data...</p>
+        </div>
+      ) : !user ? (
+        <div className="mb-10">
+          <p className="text-zinc-500">Please connect your wallet to view billing information.</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <StatCard 
+              title="Total Earned" 
+              value={`$${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+              change="All time" 
+              delay={0} 
+            />
+            <StatCard 
+              title="Total Transactions" 
+              value={transactions.length.toString()} 
+              change="All time" 
+              delay={0.1} 
+            />
+            <StatCard 
+              title="Available Balance" 
+              value={`$${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+              change="In wallet" 
+              delay={0.2} 
+            />
+          </div>
+        </>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -84,7 +204,14 @@ const Billing = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {transactions.map((t) => (
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-zinc-500">
+                    No transactions yet
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((t) => (
                 <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="py-4 px-6 text-sm text-zinc-400">{t.date}</td>
                   <td className="py-4 px-6">
@@ -100,14 +227,18 @@ const Billing = () => {
                     <span className="text-[10px] font-mono text-zinc-600 truncate w-32 inline-block">{t.txHash}</span>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile cards */}
         <div className="sm:hidden flex flex-col divide-y divide-white/5">
-          {transactions.map((t) => (
+          {transactions.length === 0 ? (
+            <div className="p-5 text-center text-zinc-500">No transactions yet</div>
+          ) : (
+            transactions.map((t) => (
             <div key={t.id} className="p-5 hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold">{t.api}</span>
@@ -120,7 +251,8 @@ const Billing = () => {
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </motion.div>
     </DashboardLayout>

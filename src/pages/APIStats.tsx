@@ -1,15 +1,85 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { userAPIs, callHistory, revenueChartData } from "@/data/mockData";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { ArrowLeft, Activity, Clock, ShieldCheck, Layers, ExternalLink, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
+import { useUser } from "@/hooks/useUser";
+import { getRecentAPICalls } from "@/lib/supabase-api";
 
 const APIStats = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const api = userAPIs.find((a) => a.id === id) || userAPIs[0];
+  const { user, loading: userLoading } = useUser();
+  const [api, setApi] = useState<any>(null);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (userLoading || !user || !id) return;
+
+      try {
+        setLoading(true);
+        // Frontend reads directly from Supabase
+        const apis = await getUserAPIsFromSupabase(user.id);
+        const foundApi = apis.find((a: any) => a.id === id);
+        if (foundApi) {
+          setApi(foundApi);
+          
+          // Fetch call history for all endpoints
+          const endpointIds = (foundApi.endpoints || []).map((e: any) => e.id);
+          if (endpointIds.length > 0) {
+            const calls = await Promise.all(
+              endpointIds.map((endpointId: string) => getRecentAPICalls(endpointId, 10))
+            );
+            setCallHistory(calls.flat().sort((a, b) => 
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            ).slice(0, 20));
+          }
+        } else {
+          navigate("/my-apis");
+        }
+      } catch (error) {
+        console.error('Error fetching API stats:', error);
+        navigate("/my-apis");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, user, userLoading, navigate]);
+
+  if (loading || userLoading) {
+    return (
+      <DashboardLayout>
+        <Link to="/my-apis" className="group flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors mb-8">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to My APIs
+        </Link>
+        <div className="text-center py-20">
+          <p className="text-zinc-500">Loading...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!api) {
+    return (
+      <DashboardLayout>
+        <Link to="/my-apis" className="group flex items-center gap-2 text-sm text-zinc-500 hover:text-white transition-colors mb-8">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to My APIs
+        </Link>
+        <div className="text-center py-20">
+          <p className="text-zinc-500">API not found</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -20,11 +90,11 @@ const APIStats = () => {
 
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tighter">{api.name}</h1>
+          <h1 className="text-4xl font-bold tracking-tighter">{api.name || api.api_name}</h1>
           <div className="flex items-center gap-3 mt-3">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/5">
               <Layers className="w-3 h-3 text-zinc-500" />
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{api.endpoints.length} Endpoints</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{api.endpoints?.length || 0} Endpoints</span>
             </div>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/5">
               <ShieldCheck className="w-3 h-3 text-zinc-500" />
@@ -41,10 +111,17 @@ const APIStats = () => {
               Edit Project
             </Link>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (confirm("Delete this entire API project?")) {
-                  toast.success("Project deleted");
-                  navigate("/my-apis");
+                  try {
+                    if (!user) return;
+                    // Frontend deletes directly from Supabase
+                    await deleteAPIFromSupabase(user.id, api.id);
+                    toast.success("Project deleted");
+                    navigate("/my-apis");
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to delete API");
+                  }
                 }
               }}
               className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-rose-500 transition-colors py-1.5 px-3 rounded bg-rose-500/5 border border-rose-500/10"
@@ -64,8 +141,8 @@ const APIStats = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
-          { label: "Project Revenue", value: `$${api.revenue.toLocaleString()}`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
-          { label: "Total Requests", value: `${(api.totalCalls / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
+          { label: "Project Revenue", value: `$${(api.revenue || 0).toLocaleString()}`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
+          { label: "Total Requests", value: `${((api.totalCalls || 0) / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
           { label: "Av. Latency", value: "42ms", icon: <Clock className="w-3 h-3 text-zinc-500" /> },
         ].map((s, i) => (
           <motion.div
@@ -93,7 +170,7 @@ const APIStats = () => {
               Active Endpoints
             </h3>
           </div>
-          {api.endpoints.map((endpoint, i) => (
+          {api.endpoints?.map((endpoint, i) => (
             <motion.div
               key={endpoint.id}
               initial={{ opacity: 0, x: -10 }}
@@ -104,19 +181,26 @@ const APIStats = () => {
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-white group-hover:text-primary transition-colors">{endpoint.name}</span>
+                    <span className="text-xs font-bold text-white group-hover:text-primary transition-colors">{endpoint.endpoint_name || endpoint.name}</span>
                     <span className="text-[10px] font-mono text-zinc-600 bg-zinc-900 border border-white/5 px-1.5 rounded uppercase">{endpoint.id}</span>
                   </div>
-                  <p className="text-[10px] font-mono text-zinc-500 truncate">https://api.zedkr.com{endpoint.path}</p>
+                  <p className="text-[10px] font-mono text-zinc-500 truncate">
+                    {endpoint.monetized_url || (user?.username && (api.api_name_slug || api.apiNameSlug)
+                      ? `https://zedkr.com/${user.username}/${api.api_name_slug || api.apiNameSlug}/${endpoint.endpoint_path || endpoint.path}`
+                      : `https://zedkr.com/.../${endpoint.endpoint_path || endpoint.path}`
+                    )}
+                  </p>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
                     <p className="text-[10px] uppercase font-bold text-zinc-600 tracking-tighter">Price</p>
-                    <p className="text-xs font-bold text-zinc-300">{endpoint.price} STX</p>
+                    <p className="text-xs font-bold text-zinc-300">
+                      {((endpoint.price || endpoint.price_microstx / 1000000) || 0).toFixed(3)} STX
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] uppercase font-bold text-zinc-600 tracking-tighter">Calls</p>
-                    <p className="text-xs font-bold text-zinc-300">{(endpoint.calls / 1000).toFixed(1)}K</p>
+                    <p className="text-xs font-bold text-zinc-300">{(endpoint.calls || 0)}</p>
                   </div>
                   <div className="h-4 w-px bg-white/10 mx-1" />
                   <button className="p-2 text-zinc-500 hover:text-white transition-colors">

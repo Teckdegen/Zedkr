@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { getUserAPIsFromSupabase, deleteAPIFromSupabase } from "@/lib/supabase-api";
 import { useUser } from "@/hooks/useUser";
-import { getRecentAPICalls } from "@/lib/supabase-api";
 import { useSTXPrice } from "@/hooks/useSTXPrice";
+import { supabase } from "@/lib/supabase";
 
 const APIStats = () => {
   const { id } = useParams();
@@ -37,25 +37,59 @@ const APIStats = () => {
         const apis = await getUserAPIsFromSupabase(user.id);
         const foundApi = apis.find((a: any) => a.id === id);
         if (foundApi) {
-          setApi(foundApi);
-          
-          // Fetch call history for all endpoints
+          // Fetch call history and stats for all endpoints
           const endpointIds = (foundApi.endpoints || []).map((e: any) => e.id);
+          
           if (endpointIds.length > 0) {
-            const calls = await Promise.all(
-              endpointIds.map((endpointId: string) => getRecentAPICalls(endpointId, 10))
-            );
-            const allCalls = calls.flat().sort((a, b) => 
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-            ).slice(0, 20).map((call: any) => ({
-              id: call.id,
-              timestamp: new Date(call.timestamp).toLocaleString(),
-              status: call.status_code || 'N/A',
-              latency: call.latency_ms || 0,
-              caller: call.caller_wallet || 'Unknown',
-            }));
-            setCallHistory(allCalls);
+            // Get all API calls for this API's endpoints to calculate revenue and total calls
+            const { data: allCallsData, error: callsError } = await supabase
+              .from('api_calls')
+              .select('amount_paid, timestamp, status_code, latency_ms, caller_wallet')
+              .in('endpoint_id', endpointIds)
+              .order('timestamp', { ascending: false });
+
+            if (!callsError && allCallsData) {
+              // Calculate total revenue (convert microSTX to STX)
+              const totalRevenue = allCallsData.reduce((sum, call) => 
+                sum + (Number(call.amount_paid) || 0), 0
+              ) / 1000000;
+
+              // Calculate total calls
+              const totalCalls = allCallsData.length;
+
+              // Get recent calls for display
+              const recentCalls = allCallsData.slice(0, 20).map((call: any) => ({
+                id: call.id || Math.random().toString(),
+                timestamp: new Date(call.timestamp).toLocaleString(),
+                status: call.status_code || 'N/A',
+                latency: call.latency_ms || 0,
+                caller: call.caller_wallet || 'Unknown',
+              }));
+
+              setCallHistory(recentCalls);
+
+              // Update API with calculated stats
+              setApi({
+                ...foundApi,
+                revenue: totalRevenue,
+                totalCalls: totalCalls,
+              });
+            } else {
+              // No calls yet
+              setApi({
+                ...foundApi,
+                revenue: 0,
+                totalCalls: 0,
+              });
+              setCallHistory([]);
+            }
           } else {
+            // No endpoints
+            setApi({
+              ...foundApi,
+              revenue: 0,
+              totalCalls: 0,
+            });
             setCallHistory([]);
           }
         } else {
@@ -136,8 +170,8 @@ const APIStats = () => {
                     if (!user) return;
                     // Frontend deletes directly from Supabase
                     await deleteAPIFromSupabase(user.id, api.id);
-                    toast.success("Project deleted");
-                    navigate("/my-apis");
+                  toast.success("Project deleted");
+                  navigate("/my-apis");
                   } catch (error: any) {
                     toast.error(error.message || "Failed to delete API");
                   }

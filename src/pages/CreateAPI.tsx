@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ const validateEndpointPath = (path: string): boolean => {
 
 const CreateAPI = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, loading: userLoading } = useUser();
     const { stxToUSD, formatUSD } = useSTXPrice();
     const [apiName, setApiName] = useState("");
@@ -42,6 +43,16 @@ const CreateAPI = () => {
         { id: "1", endpointName: "Default Endpoint", endpointPath: "default", originalUrl: "https://api.example.com/v1/data", price: "0.005" }
     ]);
     const [creating, setCreating] = useState(false);
+
+    // Reset form when component mounts or route changes
+    useEffect(() => {
+        setApiName("");
+        setApiNameSlug("");
+        setImageUrl("");
+        setEndpoints([
+            { id: "1", endpointName: "Default Endpoint", endpointPath: "default", originalUrl: "https://api.example.com/v1/data", price: "0.005" }
+        ]);
+    }, [location.pathname]);
 
     // Auto-generate slug from API name
     const handleApiNameChange = (value: string) => {

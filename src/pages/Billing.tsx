@@ -14,6 +14,7 @@ const Billing = () => {
   const { stxToUSD, formatUSD } = useSTXPrice();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [totalEarnings, setTotalEarnings] = useState(0); // In STX
+  const [earningsChartData, setEarningsChartData] = useState<Array<{ week: string; earnings: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -88,11 +89,45 @@ const Billing = () => {
           const total = formattedTransactions.reduce((sum, t) => sum + t.amount, 0);
           setTransactions(formattedTransactions);
           setTotalEarnings(total);
+
+          // Calculate weekly earnings for chart (last 8 weeks)
+          const weeklyEarnings: Record<string, number> = {};
+          
+          // Initialize last 8 weeks with 0
+          for (let i = 7; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - (i * 7));
+            const weekStart = new Date(date);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+            const weekKey = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            weeklyEarnings[weekKey] = 0;
+          }
+
+          // Group transactions by week
+          (calls || []).forEach((call: any) => {
+            const callDate = new Date(call.timestamp);
+            const weekStart = new Date(callDate);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+            const weekKey = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            if (weeklyEarnings[weekKey] !== undefined) {
+              weeklyEarnings[weekKey] += Number(call.amount_paid || 0) / 1000000; // Convert to STX
+            }
+          });
+
+          // Convert to array format for chart
+          const chartData = Object.entries(weeklyEarnings).map(([week, earnings]) => ({
+            week,
+            earnings: Number(earnings.toFixed(6)),
+          }));
+
+          setEarningsChartData(chartData);
         }
       } catch (error) {
         console.error('Error fetching billing data:', error);
         setTransactions([]);
         setTotalEarnings(0);
+        setEarningsChartData([]);
       } finally {
         setLoading(false);
       }
@@ -100,9 +135,6 @@ const Billing = () => {
 
     fetchTransactions();
   }, [user, userLoading]);
-
-  // Empty chart data for now
-  const earningsChartData: Array<{ week: string; earnings: number }> = [];
 
   return (
     <DashboardLayout>
@@ -156,7 +188,7 @@ const Billing = () => {
         </div>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={earningsChartData}>
+            <AreaChart data={earningsChartData.length > 0 ? earningsChartData : [{ week: 'No data', earnings: 0 }]}>
               <defs>
                 <linearGradient id="billingGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />

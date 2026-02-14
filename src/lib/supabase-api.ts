@@ -211,8 +211,7 @@ export async function getTopAPIs(limit: number = 4) {
       id: api.id,
       name: api.name,
       username: api.username,
-      revenue: api.revenue,
-      revenueFormatted: `$${api.revenue.toFixed(2)}`,
+      revenue: api.revenue, // In STX
       totalCalls: api.totalCalls,
     }));
 

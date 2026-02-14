@@ -6,6 +6,7 @@ import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getTotalNetworkRevenue, getTopAPIs } from "@/lib/supabase-api";
+import { useSTXPrice } from "@/hooks/useSTXPrice";
 
 const features = [
   {
@@ -31,15 +32,14 @@ const features = [
 ];
 
 const Landing = () => {
+  const { stxToUSD, formatUSD } = useSTXPrice();
   const [stats, setStats] = useState<{
-    totalNetworkRevenue: number;
-    totalNetworkRevenueFormatted: string;
+    totalNetworkRevenue: number; // In STX
     topAPIs: Array<{
       id: string;
       name: string;
       username: string | null;
-      revenue: number;
-      revenueFormatted: string;
+      revenue: number; // In STX
       totalCalls: number;
     }>;
   } | null>(null);
@@ -49,19 +49,20 @@ const Landing = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const totalRevenue = await getTotalNetworkRevenue();
-        const topAPIs = await getTopAPIs(4);
+        const totalRevenueSTX = await getTotalNetworkRevenue(); // Returns STX
+        const topAPIs = await getTopAPIs(4); // Returns revenue in STX
 
         setStats({
-          totalNetworkRevenue: totalRevenue,
-          totalNetworkRevenueFormatted: `$${totalRevenue.toFixed(2)}`,
-          topAPIs,
+          totalNetworkRevenue: totalRevenueSTX,
+          topAPIs: topAPIs.map(api => ({
+            ...api,
+            revenue: api.revenue, // Already in STX
+          })),
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
         setStats({
           totalNetworkRevenue: 0,
-          totalNetworkRevenueFormatted: '$0.00',
           topAPIs: [],
         });
       } finally {
@@ -151,9 +152,16 @@ const Landing = () => {
                 <div>
                   <h3 className="text-zinc-500 text-sm font-bold uppercase tracking-widest mb-2">Network Revenue</h3>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
-                      {loading ? '...' : (stats?.totalNetworkRevenueFormatted || '$0.00')}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-5xl md:text-7xl font-bold tracking-tighter text-white">
+                        {loading ? '...' : (stats?.totalNetworkRevenue.toFixed(2) || '0.00')} <span className="text-3xl md:text-5xl text-primary">STX</span>
+                      </span>
+                      {stats && stats.totalNetworkRevenue > 0 && (
+                        <span className="text-sm text-zinc-500 mt-1">
+                          ≈ {formatUSD(stxToUSD(stats.totalNetworkRevenue))}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-primary text-sm font-bold">All Time</span>
                   </div>
                 </div>
@@ -202,7 +210,12 @@ const Landing = () => {
                 stats.topAPIs.slice(0, 4).map((api) => (
                   <div key={api.id} className="p-4 flex flex-col gap-1">
                     <span className="text-[10px] text-zinc-500 font-bold uppercase">{api.name}</span>
-                    <span className="text-sm font-bold text-primary">{api.revenueFormatted}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-primary">{api.revenue.toFixed(3)} STX</span>
+                      {api.revenue > 0 && (
+                        <span className="text-[9px] text-zinc-600">{formatUSD(stxToUSD(api.revenue))}</span>
+                      )}
+                    </div>
                     {api.username && (
                       <span className="text-[9px] text-zinc-600 mt-1">@{api.username}</span>
                     )}

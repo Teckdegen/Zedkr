@@ -41,13 +41,15 @@ const WalletButton = () => {
         setUserData(data);
         const stxAddress = data.profile.stxAddress.testnet || data.profile.stxAddress.mainnet;
         
-        // Get user from Supabase
-        const user = await getUserByWallet(stxAddress);
-        if (user?.username) {
-          setNickname(user.username);
-        } else if (user && !user.username) {
-          setShowModal(true);
-        }
+        // Get user from Supabase (async function inside useEffect)
+        (async () => {
+          const user = await getUserByWallet(stxAddress);
+          if (user?.username) {
+            setNickname(user.username);
+          } else if (user && !user.username) {
+            setShowModal(true);
+          }
+        })();
       }
     } catch (err) {
       console.error("Session check failed", err);

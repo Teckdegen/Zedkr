@@ -58,18 +58,40 @@ const WalletButton = () => {
 
   useEffect(() => {
     if (userData) {
-      const stxAddress = userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet;
+      // Only use testnet address for balance fetching
+      const stxAddress = userData.profile.stxAddress.testnet;
+      
+      if (!stxAddress) {
+        console.warn('No testnet address found');
+        setBalance("0.00");
+        return;
+      }
+
       fetch(`https://stacks-node-api.testnet.stacks.co/extended/v1/address/${stxAddress}/balances`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
         .then(data => {
-          if (data?.stx?.balance) {
-            const bal = (parseInt(data.stx.balance) / 1000000).toFixed(2);
+          // Check multiple possible response structures
+          const balance = data?.stx?.balance || data?.stx?.total_sent || data?.balance?.stx;
+          
+          if (balance) {
+            // Handle both string and number formats
+            const balanceValue = typeof balance === 'string' ? parseInt(balance) : balance;
+            const bal = (balanceValue / 1000000).toFixed(2);
             setBalance(bal);
           } else {
+            console.warn('Balance not found in response:', data);
             setBalance("0.00");
           }
         })
-        .catch(() => setBalance("0.00"));
+        .catch((error) => {
+          console.error('Error fetching balance:', error);
+          setBalance("0.00");
+        });
     } else {
       setBalance(null);
     }

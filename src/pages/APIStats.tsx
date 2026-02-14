@@ -195,7 +195,7 @@ const APIStats = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {[
           { label: "Project Revenue", value: formatUSD(stxToUSD(api.revenue || 0)), subtitle: `${(api.revenue || 0).toFixed(3)} STX`, icon: <ShieldCheck className="w-3 h-3 text-zinc-500" /> },
-          { label: "Total Requests", value: `${((api.totalCalls || 0) / 1000).toFixed(1)}K`, icon: <Activity className="w-3 h-3 text-zinc-500" /> },
+          { label: "Total Requests", value: (api.totalCalls || 0) >= 1000 ? `${((api.totalCalls || 0) / 1000).toFixed(1)}K` : (api.totalCalls || 0).toString(), icon: <Activity className="w-3 h-3 text-zinc-500" /> },
           { label: "Av. Latency", value: "42ms", icon: <Clock className="w-3 h-3 text-zinc-500" /> },
         ].map((s, i) => (
           <motion.div

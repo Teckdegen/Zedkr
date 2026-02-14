@@ -186,36 +186,7 @@ export async function checkHealth() {
   return response.json();
 }
 
-// ============================================
-// STX Price (USD Conversion)
-// ============================================
-
-/**
- * Get current STX price in USD
- * GET /api/public/stx-price
- * 
- * Why: Convert STX amounts to USD for display
- * Used in: All pages showing prices/revenue
- */
-export async function getSTXPriceUSD(): Promise<number> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/public/stx-price`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    // Check if response is JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.warn('STX price endpoint returned non-JSON response, using fallback');
-      return 1.50;
-    }
-    
-    const data = await response.json();
-    return data.price || 1.50; // Fallback to $1.50 if price unavailable
-  } catch (error) {
-    console.error('Error fetching STX price:', error);
-    return 1.50; // Fallback price
-  }
-}
+// Note: STX price fetching is now handled directly in the frontend via CoinGecko API
+// See src/hooks/useSTXPrice.ts for implementation
+// Backend has no knowledge of prices - frontend reads STX from Supabase and converts to USD
 

@@ -1,16 +1,75 @@
 /**
  * useSTXPrice Hook
  * 
- * Fetches and caches STX price in USD for displaying USD equivalents.
+ * Fetches and caches STX price in USD from CoinGecko API directly (frontend only).
  * Updates every 5 minutes to keep prices relatively fresh.
+ * 
+ * Note: Frontend reads STX values from Supabase and converts to USD here.
+ * Backend has no knowledge of prices.
  */
 
 import { useState, useEffect } from 'react';
-import { getSTXPriceUSD } from '@/lib/api';
 
+const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/simple/price';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+interface CoinGeckoResponse {
+  blockstack?: {
+    usd?: number;
+  };
+  [key: string]: any;
+}
+
 let globalPriceCache: { price: number; timestamp: number } | null = null;
+
+async function fetchSTXPriceFromCoinGecko(): Promise<number> {
+  // Use cached price if available and fresh
+  if (globalPriceCache && Date.now() - globalPriceCache.timestamp < CACHE_DURATION) {
+    return globalPriceCache.price;
+  }
+
+  try {
+    const response = await fetch(
+      `${COINGECKO_API_URL}?ids=blockstack&vs_currencies=usd`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`CoinGecko API error: ${response.status}`);
+    }
+
+    const data = await response.json() as CoinGeckoResponse;
+    const price = data?.blockstack?.usd;
+
+    if (!price || typeof price !== 'number') {
+      throw new Error('Invalid price data from CoinGecko');
+    }
+
+    // Cache the price
+    globalPriceCache = {
+      price,
+      timestamp: Date.now(),
+    };
+
+    return price;
+  } catch (error) {
+    console.error('Error fetching STX price from CoinGecko:', error);
+    
+    // Return cached price if available, otherwise fallback
+    if (globalPriceCache) {
+      console.warn('Using cached STX price due to API error');
+      return globalPriceCache.price;
+    }
+
+    // Fallback to approximate price
+    console.warn('Using fallback STX price: $1.50');
+    return 1.50;
+  }
+}
 
 export function useSTXPrice() {
   const [price, setPrice] = useState<number>(1.50); // Default fallback
@@ -18,19 +77,8 @@ export function useSTXPrice() {
 
   useEffect(() => {
     const fetchPrice = async () => {
-      // Use cached price if available and fresh
-      if (globalPriceCache && Date.now() - globalPriceCache.timestamp < CACHE_DURATION) {
-        setPrice(globalPriceCache.price);
-        setLoading(false);
-        return;
-      }
-
       try {
-        const stxPrice = await getSTXPriceUSD();
-        globalPriceCache = {
-          price: stxPrice,
-          timestamp: Date.now(),
-        };
+        const stxPrice = await fetchSTXPriceFromCoinGecko();
         setPrice(stxPrice);
       } catch (error) {
         console.error('Error fetching STX price:', error);

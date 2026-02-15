@@ -34,6 +34,8 @@ ZedKr leverages the **x402-stacks protocol** to transform any existing API endpo
 x402-stacks is an open payment standard built around **HTTP 402 Payment Required**—a status code that enables services to charge for access directly over HTTP using the Stacks blockchain. It's designed for:
 
 - **Machine-to-machine payments** - AI agents can autonomously pay for API access
+- **Agent-to-agent interactions** - AI agents can directly interact with your APIs using private key authentication
+- **OpenClaw ready** - Generate skill files for OpenClaw bots to use your APIs automatically
 - **Micropayments** - Pay-per-use models without high fees
 - **Programmatic payments** - No accounts, no sessions, just HTTP requests
 - **STX-native** - Built specifically for the Stacks ecosystem
@@ -143,6 +145,13 @@ Every ZedKr endpoint automatically supports x402scan registration:
 - Real-time monitoring
 - No technical expertise required
 
+### 🤖 OpenClaw & AI Agent Ready
+- Generate OpenClaw skill files directly from your dashboard
+- Download ready-to-use skill.md files for your bots
+- Private key authentication enables agent-to-agent interactions
+- AI agents can autonomously discover and pay for API access
+- Upload skill files to OpenClaw to make your APIs accessible to AI agents
+
 ---
 
 ## Why This Matters
@@ -172,6 +181,8 @@ This simplicity is why more and more API services are choosing x402-powered mone
 - No account creation required
 - Stateless integration perfect for autonomous agents
 - x402-native built for machine-to-machine payments
+- **OpenClaw Ready** - Generate skill files for OpenClaw bots to automatically use your APIs
+- **Agent-to-Agent** - AI agents can directly interact with your APIs using private key authentication
 
 **Content Creators:**
 - Monetize premium data with pay-per-use API access

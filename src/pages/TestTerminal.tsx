@@ -75,33 +75,81 @@ const TestTerminal = () => {
     }]);
   };
 
-  const getPrivateKey = (): string | null => {
+  const getPrivateKey = async (): Promise<string | null> => {
     try {
       if (!userSession.isUserSignedIn()) {
+        console.error('User is not signed in');
         return null;
       }
 
       const userData = userSession.loadUserData();
       
-      // Try different possible locations for the private key
+      // Log the structure for debugging
+      console.log('UserData keys:', Object.keys(userData));
+      console.log('UserData.appPrivateKey exists:', !!userData.appPrivateKey);
+      console.log('UserData.keychain exists:', !!userData.keychain);
+      
+      // Try direct appPrivateKey first (most common in Stacks Connect)
       if (userData.appPrivateKey) {
+        console.log('Found appPrivateKey directly');
         return userData.appPrivateKey;
       }
       
       // Try alternative paths
       if ((userData as any).privateKey) {
+        console.log('Found privateKey in userData');
         return (userData as any).privateKey;
       }
       
-      // Try getting from encryption key
-      if (userData.keychain && (userData.keychain as any).appPrivateKey) {
-        return (userData.keychain as any).appPrivateKey;
+      // Try getting from keychain
+      if (userData.keychain) {
+        const keychain = userData.keychain as any;
+        console.log('Keychain keys:', Object.keys(keychain));
+        
+        // Try direct access to appPrivateKey in keychain
+        if (keychain.appPrivateKey) {
+          console.log('Found appPrivateKey in keychain');
+          return keychain.appPrivateKey;
+        }
+        
+        // Try getting from encryption key
+        if (keychain.encryptionPrivateKey) {
+          console.log('Found encryptionPrivateKey in keychain');
+          return keychain.encryptionPrivateKey;
+        }
       }
 
-      // Log the structure for debugging
-      console.log('UserData structure:', Object.keys(userData));
-      console.log('UserData:', userData);
+      // Try accessing through userSession methods
+      if (typeof (userSession as any).getAppPrivateKey === 'function') {
+        try {
+          const key = await (userSession as any).getAppPrivateKey();
+          if (key) {
+            console.log('Got private key via getAppPrivateKey method');
+            return key;
+          }
+        } catch (e) {
+          console.warn('getAppPrivateKey method failed:', e);
+        }
+      }
+
+      // Try using the encryption utilities to get the key
+      try {
+        const { getAppPrivateKey } = await import('@stacks/encryption');
+        if (userData.keychain) {
+          const key = getAppPrivateKey({
+            keychain: userData.keychain,
+          });
+          if (key) {
+            console.log('Got private key via encryption utilities');
+            return key;
+          }
+        }
+      } catch (e) {
+        console.warn('Encryption utilities import/usage failed:', e);
+      }
       
+      // Final debug log
+      console.error('Could not find private key. Full userData:', JSON.stringify(userData, null, 2));
       return null;
     } catch (error) {
       console.error('Error getting private key:', error);
@@ -129,15 +177,19 @@ const TestTerminal = () => {
       return;
     }
 
-    // Get private key
-    const privateKey = getPrivateKey();
+    // Get private key (async)
+    addTerminalLine('info', '🔑 Retrieving private key from wallet session...');
+    const privateKey = await getPrivateKey();
     
     if (!privateKey) {
       addTerminalLine('error', '❌ Could not get private key from wallet session.');
       addTerminalLine('info', '   Make sure you are connected via Stacks Connect.');
       addTerminalLine('info', '   Try disconnecting and reconnecting your wallet.');
+      addTerminalLine('info', '   Check browser console for detailed error information.');
       return;
     }
+    
+    addTerminalLine('success', '✅ Private key retrieved successfully.');
 
     setIsLoading(true);
     

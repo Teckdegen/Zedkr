@@ -25,3 +25,6 @@ dist-ssr
 
 # Demo video script
 video.md
+
+# Build documentation
+build.md

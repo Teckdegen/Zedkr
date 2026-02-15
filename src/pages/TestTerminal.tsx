@@ -4,7 +4,7 @@ import { Send, Terminal, Loader2, CheckCircle2, XCircle, Copy, Check } from "luc
 import { toast } from "sonner";
 import { userSession } from "@/lib/stacks-auth";
 import { useUser } from "@/hooks/useUser";
-import Layout from "@/components/Layout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 // Import x402-stacks and axios
 import { 
@@ -172,16 +172,16 @@ const TestTerminal = () => {
 
   if (userLoading) {
     return (
-      <Layout>
+      <DashboardLayout>
         <div className="min-h-screen bg-black text-white flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <Layout>
+    <DashboardLayout>
       <div className="min-h-screen bg-black text-white p-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -325,7 +325,7 @@ const TestTerminal = () => {
           </motion.div>
         </div>
       </div>
-    </Layout>
+    </DashboardLayout>
   );
 };
 

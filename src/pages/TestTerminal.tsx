@@ -18,7 +18,6 @@ import {
   tupleCV,
   bufferCV,
 } from '@stacks/transactions';
-import { StacksTestnet, StacksMainnet } from '@stacks/network';
 import { decodePaymentResponse, getExplorerURL } from 'x402-stacks';
 
 interface TerminalLine {
@@ -238,7 +237,11 @@ const TestTerminal = () => {
         }
 
         // Step 3: Create STX transfer transaction
-        const networkConfig = isTestnet ? new StacksTestnet() : new StacksMainnet();
+        // Create network config object (we'll use testnet by default)
+        const networkConfig = {
+          coreApiUrl: isTestnet ? 'https://api.testnet.hiro.so' : 'https://api.hiro.so',
+          networkId: isTestnet ? 2147483648 : 1,
+        };
         
         const txOptions = {
           recipient: payTo,

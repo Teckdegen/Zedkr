@@ -294,6 +294,78 @@ Client → ZedKr URL → x402 Payment Check → Stacks Blockchain Verification �
 
 ---
 
+## Building from Source
+
+### Prerequisites
+- Node.js 18+ and npm
+- Git
+- A Stacks wallet for testing
+- Supabase account (for database)
+
+### Clone the Repository
+```bash
+git clone https://github.com/Teckdegen/Zedkr.git
+cd Zedkr
+```
+
+### Frontend Setup
+```bash
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+
+# Add your environment variables:
+# VITE_SUPABASE_URL=your_supabase_url
+# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# VITE_STACKS_NETWORK=testnet
+# VITE_BACKEND_URL=http://localhost:8080
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### Backend Setup
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env
+
+# Add your environment variables:
+# SUPABASE_URL=your_supabase_url
+# SUPABASE_SERVICE_KEY=your_supabase_service_key
+# STACKS_NETWORK=testnet
+# STACKS_API_URL=https://api.testnet.hiro.so
+# FACILITATOR_URL=https://facilitator.stacksx402.com
+# CORS_ORIGIN=http://localhost:5173
+# PORT=8080
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+### Running the Full Stack
+1. Start the backend server: `cd backend && npm run dev`
+2. Start the frontend server: `npm run dev` (from root)
+3. Open http://localhost:5173 in your browser
+4. Connect your Stacks wallet and start creating APIs
+
+---
+
 ## Contributing
 
 We welcome contributions! Please see our contributing guidelines for details.
@@ -303,14 +375,6 @@ We welcome contributions! Please see our contributing guidelines for details.
 ## License
 
 MIT License - see LICENSE file for details
-
----
-
-## Support
-
-- **Documentation:** [docs.zedkr.com](https://docs.zedkr.com)
-- **Discord:** [discord.gg/zedkr](https://discord.gg/zedkr)
-- **Twitter:** [@zedkr](https://twitter.com/zedkr)
 
 ---
 

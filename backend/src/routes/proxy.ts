@@ -1,8 +1,9 @@
 import express from 'express';
-import { paymentMiddleware, getPayment, STXtoMicroSTX } from 'x402-stacks';
+import { paymentMiddleware, getPayment, STXtoMicroSTX, privateKeyToAccount, wrapAxiosWithPayment } from 'x402-stacks';
 import { supabase } from '../config/supabase.js';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { updateMonetizedUrlForEndpoint } from '../utils/updateMonetizedUrls.js';
+import axios from 'axios';
 
 const router = express.Router();
 
@@ -62,7 +63,15 @@ router.all('/:username/:apiName/*', async (req, res, next) => {
       original_url: endpoint.original_url,
     };
 
-    // Apply x402 payment middleware
+    // Check if private key is provided (for direct payment without wallet connect)
+    const privateKey = req.query.privateKey as string || req.headers['x-private-key'] as string;
+    
+    if (privateKey) {
+      // Direct payment mode: use private key to auto-sign payment
+      return handleDirectPayment(req, res, endpoint, privateKey);
+    }
+
+    // Normal mode: use payment middleware (requires wallet connect)
     const network = (process.env.NETWORK || 'testnet') as 'mainnet' | 'testnet';
     const facilitatorUrl = process.env.FACILITATOR_URL || 'https://facilitator.stacksx402.com';
 
@@ -107,6 +116,101 @@ router.all('/:username/:apiName/*', async (req, res, next) => {
 });
 
 /**
+ * Handle direct payment with private key (auto-sign payment)
+ * Uses wrapAxiosWithPayment to handle the full x402 flow automatically
+ */
+async function handleDirectPayment(req: express.Request, res: express.Response, endpoint: any, privateKey: string) {
+  try {
+    const network = (process.env.NETWORK || 'testnet') as 'mainnet' | 'testnet';
+    const endpointConfig = (req as any).endpointConfig;
+
+    // Create account from private key
+    const account = privateKeyToAccount(privateKey, network);
+    const payerAddress = account.address;
+
+    // Use wrapAxiosWithPayment to handle x402 flow automatically
+    const api = wrapAxiosWithPayment(
+      axios.create({
+        baseURL: process.env.ZEDKR_DOMAIN || 'https://zedkr.up.railway.app',
+        timeout: 60000,
+      }),
+      account
+    );
+
+    // Build the request path (remove privateKey from query)
+    const url = new URL(req.originalUrl, `http://${req.headers.host}`);
+    url.searchParams.delete('privateKey'); // Remove private key from URL
+    const requestPath = url.pathname + url.search;
+
+    // Make the paid request - x402-stacks handles everything automatically
+    const response = await api.get(requestPath);
+
+    // Get payment details from response headers
+    const paymentResponseHeader = response.headers['payment-response'];
+    let payment: any = null;
+    
+    if (paymentResponseHeader) {
+      try {
+        const decoded = Buffer.from(paymentResponseHeader, 'base64').toString();
+        const paymentData = JSON.parse(decoded);
+        payment = {
+          payer: paymentData.payer || payerAddress,
+          transaction: paymentData.transaction || '',
+          network: paymentData.network || network,
+        };
+      } catch (e) {
+        // Fallback if decoding fails
+        payment = {
+          payer: payerAddress,
+          transaction: '',
+          network: network,
+        };
+      }
+    } else {
+      payment = {
+        payer: payerAddress,
+        transaction: '',
+        network: network,
+      };
+    }
+
+    // Attach payment to request for logging
+    (req as any).payment = payment;
+
+    // Send the response directly (it's already the proxied API response)
+    // The x402-stacks library already handled the payment and got the API response
+    res.status(response.status).json(response.data);
+    
+    // Log the API call
+    if (payment && payment.transaction) {
+      const startTime = Date.now();
+      Promise.resolve(supabase.from('api_calls').insert({
+        endpoint_id: endpointConfig.id,
+        caller_wallet: payment.payer,
+        tx_hash: payment.transaction,
+        amount_paid: endpointConfig.price_microstx,
+        status_code: response.status,
+        latency_ms: Date.now() - startTime,
+      })).then(() => {
+        // Successfully logged
+      }).catch((error: any) => {
+        console.error('Error logging API call:', error);
+      });
+    }
+  } catch (error: any) {
+    console.error('Direct payment error:', error);
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to process payment with private key: ' + error.message,
+      });
+    }
+  }
+}
+
+/**
  * Handle proxied request after payment verification
  */
 async function handleProxiedRequest(req: express.Request, res: express.Response, endpoint: any) {
@@ -149,12 +253,16 @@ async function handleProxiedRequest(req: express.Request, res: express.Response,
         [`^/.*`]: targetUrlObj.pathname + (targetUrlObj.search || ''), // Use original path
       },
       onProxyReq: (proxyReq, req, res) => {
-        // Forward original headers (except host)
+        // Forward original headers (except host and x402-specific headers)
+        const headersToSkip = ['host', 'payment-signature', 'x-private-key'];
         Object.keys(req.headers).forEach((key) => {
-          if (key.toLowerCase() !== 'host') {
+          const lowerKey = key.toLowerCase();
+          if (!headersToSkip.includes(lowerKey)) {
             const value = req.headers[key];
-            if (value) {
-              proxyReq.setHeader(key, value as string);
+            if (value && typeof value === 'string') {
+              proxyReq.setHeader(key, value);
+            } else if (Array.isArray(value) && value.length > 0) {
+              proxyReq.setHeader(key, value[0]);
             }
           }
         });
@@ -170,26 +278,38 @@ async function handleProxiedRequest(req: express.Request, res: express.Response,
       onProxyRes: async (proxyRes, req, res) => {
         const latency = Date.now() - startTime;
 
-        // Update API call log with status and latency
+        // Add payment response header if payment was made
+        // http-proxy-middleware already handles copying response headers, we just add our custom header
+        if (payment && !res.headersSent) {
+          try {
+            const paymentResponse = {
+              success: true,
+              transaction: payment.transaction,
+              payer: payment.payer,
+              network: payment.network,
+            };
+            res.setHeader('payment-response', Buffer.from(JSON.stringify(paymentResponse)).toString('base64'));
+          } catch (error) {
+            // Headers already sent, ignore
+            console.warn('Could not set payment-response header:', error);
+          }
+        }
+
+        // Update API call log with status and latency (async, don't block response)
         if (payment) {
-          await supabase
+          // Don't await - run in background to avoid blocking response
+          Promise.resolve(supabase
             .from('api_calls')
             .update({
               status_code: proxyRes.statusCode,
               latency_ms: latency,
             })
-            .eq('tx_hash', payment.transaction);
-        }
-
-        // Add payment response header if payment was made
-        if (payment) {
-          const paymentResponse = {
-            success: true,
-            transaction: payment.transaction,
-            payer: payment.payer,
-            network: payment.network,
-          };
-          res.setHeader('payment-response', Buffer.from(JSON.stringify(paymentResponse)).toString('base64'));
+            .eq('tx_hash', payment.transaction)
+          ).then(() => {
+            // Successfully updated
+          }).catch((error: any) => {
+            console.error('Error updating API call log:', error);
+          });
         }
       },
       onError: (err, req, res) => {

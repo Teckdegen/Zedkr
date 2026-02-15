@@ -17,9 +17,8 @@ import {
   stringAsciiCV,
   tupleCV,
   bufferCV,
-  StacksTestnet,
-  StacksMainnet,
 } from '@stacks/transactions';
+import { StacksTestnet, StacksMainnet } from '@stacks/network';
 import { decodePaymentResponse, getExplorerURL } from 'x402-stacks';
 
 interface TerminalLine {

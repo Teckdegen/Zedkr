@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Send, Terminal, Loader2, CheckCircle2, XCircle, Copy, Check } from "lucide-react";
+import { Terminal, Loader2, CheckCircle2, XCircle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { userSession } from "@/lib/stacks-auth";
 import { useUser } from "@/hooks/useUser";
@@ -16,14 +16,14 @@ import {
 import axios from 'axios';
 
 interface TerminalLine {
-  type: 'command' | 'output' | 'error' | 'info' | 'success';
+  type: 'command' | 'output' | 'error' | 'info' | 'success' | 'prompt';
   content: string;
   timestamp: Date;
 }
 
 const TestTerminal = () => {
   const { user, loading: userLoading } = useUser();
-  const [endpointUrl, setEndpointUrl] = useState("");
+  const [commandInput, setCommandInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([
     {
@@ -33,7 +33,12 @@ const TestTerminal = () => {
     },
     {
       type: 'info',
-      content: 'Enter an API endpoint URL below and click Send to test it with wallet connect payment.',
+      content: 'Type an API endpoint path and press Enter to test it with wallet connect payment.',
+      timestamp: new Date(),
+    },
+    {
+      type: 'info',
+      content: 'Example: /teckdegen/teck/teck',
       timestamp: new Date(),
     },
     {
@@ -43,14 +48,24 @@ const TestTerminal = () => {
     },
   ]);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // Auto-scroll terminal to bottom
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-  }, [terminalLines]);
+  }, [terminalLines, commandInput]);
+
+  // Focus input on mount
+  useEffect(() => {
+    if (inputRef.current && !userLoading) {
+      inputRef.current.focus();
+    }
+  }, [userLoading]);
 
   const addTerminalLine = (type: TerminalLine['type'], content: string) => {
     setTerminalLines(prev => [...prev, {
@@ -60,33 +75,76 @@ const TestTerminal = () => {
     }]);
   };
 
-  const handleTest = async () => {
-    if (!endpointUrl.trim()) {
-      toast.error("Please enter an endpoint URL");
+  const getPrivateKey = (): string | null => {
+    try {
+      if (!userSession.isUserSignedIn()) {
+        return null;
+      }
+
+      const userData = userSession.loadUserData();
+      
+      // Try different possible locations for the private key
+      if (userData.appPrivateKey) {
+        return userData.appPrivateKey;
+      }
+      
+      // Try alternative paths
+      if ((userData as any).privateKey) {
+        return (userData as any).privateKey;
+      }
+      
+      // Try getting from encryption key
+      if (userData.keychain && (userData.keychain as any).appPrivateKey) {
+        return (userData.keychain as any).appPrivateKey;
+      }
+
+      // Log the structure for debugging
+      console.log('UserData structure:', Object.keys(userData));
+      console.log('UserData:', userData);
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting private key:', error);
+      return null;
+    }
+  };
+
+  const executeCommand = async (command: string) => {
+    const trimmedCommand = command.trim();
+    
+    if (!trimmedCommand) {
       return;
     }
 
-    // Libraries are imported, no need to check
+    // Add command to history
+    setCommandHistory(prev => [...prev, trimmedCommand]);
+    setHistoryIndex(-1);
+
+    // Display the command
+    addTerminalLine('command', trimmedCommand);
 
     // Check if user is signed in
     if (!userSession.isUserSignedIn()) {
       addTerminalLine('error', '❌ Wallet not connected. Please connect your wallet first.');
-      toast.error("Wallet not connected");
+      return;
+    }
+
+    // Get private key
+    const privateKey = getPrivateKey();
+    
+    if (!privateKey) {
+      addTerminalLine('error', '❌ Could not get private key from wallet session.');
+      addTerminalLine('info', '   Make sure you are connected via Stacks Connect.');
+      addTerminalLine('info', '   Try disconnecting and reconnecting your wallet.');
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // Get user's private key from Stacks Connect session
-      const userData = userSession.loadUserData();
-      const privateKey = userData.appPrivateKey;
-      
-      if (!privateKey) {
-        throw new Error('Could not get private key from wallet session');
-      }
+      // Ensure endpoint starts with /
+      const endpointPath = trimmedCommand.startsWith('/') ? trimmedCommand : `/${trimmedCommand}`;
 
-      addTerminalLine('command', `📡 Making request to: ${endpointUrl}`);
       addTerminalLine('info', '💳 Payment will be handled automatically via x402 protocol...');
 
       // Create account from private key
@@ -103,7 +161,7 @@ const TestTerminal = () => {
       );
 
       // Make the request - x402-stacks handles payment automatically
-      const response = await api.get(endpointUrl);
+      const response = await api.get(endpointPath);
 
       addTerminalLine('success', '✅ Request successful!');
       addTerminalLine('output', `📦 Response data:`);
@@ -142,6 +200,34 @@ const TestTerminal = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !isLoading) {
+      executeCommand(commandInput);
+      setCommandInput("");
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (commandHistory.length > 0) {
+        const newIndex = historyIndex === -1 
+          ? commandHistory.length - 1 
+          : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        setCommandInput(commandHistory[newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex >= 0) {
+        const newIndex = historyIndex + 1;
+        if (newIndex >= commandHistory.length) {
+          setHistoryIndex(-1);
+          setCommandInput("");
+        } else {
+          setHistoryIndex(newIndex);
+          setCommandInput(commandHistory[newIndex]);
+        }
+      }
+    }
+  };
+
   const handleCopyAll = () => {
     const allText = terminalLines.map(line => line.content).join('\n');
     navigator.clipboard.writeText(allText);
@@ -168,6 +254,7 @@ const TestTerminal = () => {
         timestamp: new Date(),
       },
     ]);
+    setCommandInput("");
   };
 
   if (userLoading) {
@@ -194,72 +281,22 @@ const TestTerminal = () => {
               <h1 className="text-2xl font-bold tracking-tight">API Test Terminal</h1>
             </div>
             <p className="text-zinc-500 text-sm">
-              Test your monetized API endpoints with wallet connect payment
+              Type commands directly in the terminal below. Press Enter to execute.
             </p>
-          </motion.div>
-
-          {/* Input Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="vercel-card p-6 mb-6"
-          >
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="text-xs uppercase font-bold text-zinc-500 mb-2 block">
-                  Endpoint URL
-                </label>
-                <input
-                  type="text"
-                  value={endpointUrl}
-                  onChange={(e) => setEndpointUrl(e.target.value)}
-                  placeholder="/username/api/endpoint"
-                  className="w-full bg-zinc-900 border border-white/5 rounded-lg px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isLoading) {
-                      handleTest();
-                    }
-                  }}
-                />
-                <p className="text-[10px] text-zinc-600 mt-2">
-                  Example: /teckdegen/teck/teck
-                </p>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={handleTest}
-                  disabled={isLoading || !endpointUrl.trim()}
-                  className="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send Request
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
           </motion.div>
 
           {/* Terminal Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
             className="vercel-card p-0 overflow-hidden"
           >
             {/* Terminal Header */}
             <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-zinc-950">
               <div className="flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-zinc-500" />
-                <span className="text-xs font-bold uppercase text-zinc-500">Terminal Output</span>
+                <span className="text-xs font-bold uppercase text-zinc-500">Terminal</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -286,6 +323,7 @@ const TestTerminal = () => {
             <div
               ref={terminalRef}
               className="p-6 bg-zinc-950 font-mono text-xs h-[600px] overflow-y-auto"
+              onClick={() => inputRef.current?.focus()}
             >
               {terminalLines.map((line, index) => {
                 const time = line.timestamp.toLocaleTimeString();
@@ -309,18 +347,35 @@ const TestTerminal = () => {
 
                 return (
                   <div key={index} className={`mb-1 ${textColor}`}>
-                    <span className="text-zinc-600 mr-2">[{time}]</span>
-                    {icon && <span className="mr-2">{icon}</span>}
+                    {line.type !== 'prompt' && (
+                      <>
+                        <span className="text-zinc-600 mr-2">[{time}]</span>
+                        {icon && <span className="mr-2">{icon}</span>}
+                      </>
+                    )}
                     <span className="whitespace-pre-wrap">{line.content}</span>
                   </div>
                 );
               })}
-              {isLoading && (
-                <div className="text-zinc-500">
-                  <Loader2 className="w-3 h-3 animate-spin inline mr-2" />
-                  Processing request...
-                </div>
-              )}
+              
+              {/* Command Input Line */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-primary">$</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={commandInput}
+                  onChange={(e) => setCommandInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent border-none outline-none text-zinc-200 placeholder-zinc-600"
+                  placeholder={isLoading ? "Processing..." : "Type endpoint path and press Enter..."}
+                  autoFocus
+                />
+                {isLoading && (
+                  <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />
+                )}
+              </div>
             </div>
           </motion.div>
         </div>
@@ -330,4 +385,3 @@ const TestTerminal = () => {
 };
 
 export default TestTerminal;
-

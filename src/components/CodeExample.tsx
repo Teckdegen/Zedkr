@@ -13,7 +13,7 @@ interface CodeExampleProps {
 
 const CodeExample = ({ endpointUrl, endpointName, priceSTX, isOpen, onClose }: CodeExampleProps) => {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'wallet-connect' | 'private-key'>('wallet-connect');
+  const [activeTab, setActiveTab] = useState<'direct-call' | 'wallet-connect' | 'private-key'>('direct-call');
 
   const walletConnectExample = `import { wrapAxiosWithPayment, privateKeyToAccount } from 'x402-stacks';
 import axios from 'axios';
@@ -82,7 +82,34 @@ console.log('Response:', response.data);
 const paymentResponse = response.headers['payment-response'];
 console.log('Payment transaction:', paymentResponse);`;
 
-  const codeExample = activeTab === 'wallet-connect' ? walletConnectExample : privateKeyExample;
+  const directCallExample = `# Direct API Call with Private Key
+# The easiest way to test your API - just add your private key!
+
+# Method 1: Private Key in URL (Query Parameter)
+curl "${endpointUrl}?privateKey=YOUR_PRIVATE_KEY_HERE"
+
+# Method 2: Private Key in Header (Recommended for Production)
+curl -H "x-private-key: YOUR_PRIVATE_KEY_HERE" "${endpointUrl}"
+
+# Example with actual private key:
+curl "${endpointUrl}?privateKey=ed25519:your_private_key_here"
+
+# The payment is automatically processed via x402-stacks protocol
+# No code needed - just replace YOUR_PRIVATE_KEY_HERE with your Stacks private key
+
+# Response includes payment transaction details in headers
+# Check the 'payment-response' header for transaction hash and details
+
+# ⚠️ SECURITY WARNING:
+# - Never share your private key publicly
+# - Never commit private keys to git
+# - Use environment variables in production
+# - This method is perfect for testing and AI agents`;
+
+  const codeExample = 
+    activeTab === 'direct-call' ? directCallExample :
+    activeTab === 'wallet-connect' ? walletConnectExample : 
+    privateKeyExample;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(codeExample);
@@ -142,6 +169,16 @@ console.log('Payment transaction:', paymentResponse);`;
               <div className="px-6 pt-4 border-b border-white/10">
                 <div className="flex gap-2">
                   <button
+                    onClick={() => setActiveTab('direct-call')}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
+                      activeTab === 'direct-call'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Direct Call
+                  </button>
+                  <button
                     onClick={() => setActiveTab('wallet-connect')}
                     className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${
                       activeTab === 'wallet-connect'
@@ -170,9 +207,20 @@ console.log('Payment transaction:', paymentResponse);`;
                 </pre>
               </div>
               <div className="p-6 border-t border-white/10 bg-white/[0.01]">
-                <p className="text-[10px] text-zinc-500">
-                  Install: <span className="font-mono text-zinc-400">npm install x402-stacks axios{activeTab === 'wallet-connect' ? ' @stacks/connect' : ''}</span>
-                </p>
+                {activeTab === 'direct-call' ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-zinc-500">
+                      <span className="text-primary font-bold">✨ Easiest Method:</span> Just add your private key to the URL or header - no code needed!
+                    </p>
+                    <p className="text-[10px] text-zinc-500">
+                      Perfect for testing, automation, and AI agents. Payment is automatically processed via x402-stacks protocol.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-zinc-500">
+                    Install: <span className="font-mono text-zinc-400">npm install x402-stacks axios{activeTab === 'wallet-connect' ? ' @stacks/connect' : ''}</span>
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>

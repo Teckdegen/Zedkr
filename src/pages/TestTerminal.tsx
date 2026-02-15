@@ -2,18 +2,25 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Terminal, Loader2, CheckCircle2, XCircle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
-import { userSession } from "@/lib/stacks-auth";
+import { userSession, appDetails, showConnect } from "@/lib/stacks-auth";
 import { useUser } from "@/hooks/useUser";
 import DashboardLayout from "@/components/DashboardLayout";
-
-// Import x402-stacks and axios
-import { 
-  wrapAxiosWithPayment, 
-  privateKeyToAccount,
-  decodePaymentResponse,
-  getExplorerURL 
-} from 'x402-stacks';
 import axios from 'axios';
+import { 
+  makeSTXTokenTransfer,
+  broadcastTransaction,
+  AnchorMode,
+  PostConditionMode,
+  createAssetInfo,
+  standardPrincipalCV,
+  uintCV,
+  stringAsciiCV,
+  tupleCV,
+  bufferCV,
+  StacksTestnet,
+  StacksMainnet,
+} from '@stacks/transactions';
+import { decodePaymentResponse, getExplorerURL } from 'x402-stacks';
 
 interface TerminalLine {
   type: 'command' | 'output' | 'error' | 'info' | 'success' | 'prompt';
@@ -75,86 +82,69 @@ const TestTerminal = () => {
     }]);
   };
 
-  const getPrivateKey = async (): Promise<string | null> => {
+  const getWalletAddress = (): string | null => {
     try {
       if (!userSession.isUserSignedIn()) {
-        console.error('User is not signed in');
         return null;
       }
-
       const userData = userSession.loadUserData();
-      
-      // Log the structure for debugging
-      console.log('UserData keys:', Object.keys(userData));
-      console.log('UserData.appPrivateKey exists:', !!userData.appPrivateKey);
-      console.log('UserData.keychain exists:', !!userData.keychain);
-      
-      // Try direct appPrivateKey first (most common in Stacks Connect)
-      if (userData.appPrivateKey) {
-        console.log('Found appPrivateKey directly');
-        return userData.appPrivateKey;
-      }
-      
-      // Try alternative paths
-      if ((userData as any).privateKey) {
-        console.log('Found privateKey in userData');
-        return (userData as any).privateKey;
-      }
-      
-      // Try getting from keychain
-      if (userData.keychain) {
-        const keychain = userData.keychain as any;
-        console.log('Keychain keys:', Object.keys(keychain));
-        
-        // Try direct access to appPrivateKey in keychain
-        if (keychain.appPrivateKey) {
-          console.log('Found appPrivateKey in keychain');
-          return keychain.appPrivateKey;
-        }
-        
-        // Try getting from encryption key
-        if (keychain.encryptionPrivateKey) {
-          console.log('Found encryptionPrivateKey in keychain');
-          return keychain.encryptionPrivateKey;
-        }
-      }
-
-      // Try accessing through userSession methods
-      if (typeof (userSession as any).getAppPrivateKey === 'function') {
-        try {
-          const key = await (userSession as any).getAppPrivateKey();
-          if (key) {
-            console.log('Got private key via getAppPrivateKey method');
-            return key;
-          }
-        } catch (e) {
-          console.warn('getAppPrivateKey method failed:', e);
-        }
-      }
-
-      // Try using the encryption utilities to get the key
-      try {
-        const { getAppPrivateKey } = await import('@stacks/encryption');
-        if (userData.keychain) {
-          const key = getAppPrivateKey({
-            keychain: userData.keychain,
-          });
-          if (key) {
-            console.log('Got private key via encryption utilities');
-            return key;
-          }
-        }
-      } catch (e) {
-        console.warn('Encryption utilities import/usage failed:', e);
-      }
-      
-      // Final debug log
-      console.error('Could not find private key. Full userData:', JSON.stringify(userData, null, 2));
-      return null;
+      return userData.profile.stxAddress.testnet || userData.profile.stxAddress.mainnet || null;
     } catch (error) {
-      console.error('Error getting private key:', error);
+      console.error('Error getting wallet address:', error);
       return null;
     }
+  };
+
+  const signTransactionWithWallet = async (txOptions: any): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Import Stacks Connect transaction signing
+        import('@stacks/connect').then((StacksConnect) => {
+          const openSTXTransaction = (StacksConnect as any).openSTXTransaction || 
+                                     (StacksConnect.default as any)?.openSTXTransaction;
+
+          if (!openSTXTransaction) {
+            // Try window global
+            const windowConnect = (window as any).StacksConnect;
+            const windowOpenTx = windowConnect?.openSTXTransaction;
+            
+            if (!windowOpenTx) {
+              reject(new Error('Stacks Connect transaction signing not available. Make sure @stacks/connect is properly loaded.'));
+              return;
+            }
+
+            windowOpenTx({
+              ...txOptions,
+              appDetails,
+              userSession,
+              onFinish: (data: any) => {
+                resolve(data.txId || data.txid || null);
+              },
+              onCancel: () => {
+                reject(new Error('Transaction signing cancelled by user'));
+              },
+            });
+            return;
+          }
+
+          openSTXTransaction({
+            ...txOptions,
+            appDetails,
+            userSession,
+            onFinish: (data: any) => {
+              resolve(data.txId || data.txid || null);
+            },
+            onCancel: () => {
+              reject(new Error('Transaction signing cancelled by user'));
+            },
+          });
+        }).catch((error) => {
+          reject(new Error(`Failed to load Stacks Connect: ${error.message}`));
+        });
+      } catch (error: any) {
+        reject(error);
+      }
+    });
   };
 
   const executeCommand = async (command: string) => {
@@ -177,74 +167,154 @@ const TestTerminal = () => {
       return;
     }
 
-    // Get private key (async)
-    addTerminalLine('info', '🔑 Retrieving private key from wallet session...');
-    const privateKey = await getPrivateKey();
-    
-    if (!privateKey) {
-      addTerminalLine('error', '❌ Could not get private key from wallet session.');
-      addTerminalLine('info', '   Make sure you are connected via Stacks Connect.');
-      addTerminalLine('info', '   Try disconnecting and reconnecting your wallet.');
-      addTerminalLine('info', '   Check browser console for detailed error information.');
-      return;
-    }
-    
-    addTerminalLine('success', '✅ Private key retrieved successfully.');
-
     setIsLoading(true);
     
     try {
       // Ensure endpoint starts with /
       const endpointPath = trimmedCommand.startsWith('/') ? trimmedCommand : `/${trimmedCommand}`;
+      const fullUrl = `https://zedkr.up.railway.app${endpointPath}`;
 
-      addTerminalLine('info', '💳 Payment will be handled automatically via x402 protocol...');
+      addTerminalLine('info', `📡 Making request to: ${fullUrl}`);
 
-      // Create account from private key
-      const account = privateKeyToAccount(privateKey, 'testnet');
-      addTerminalLine('info', `✅ Using wallet: ${account.address}`);
-
-      // Wrap axios with automatic x402 payment handling
-      const api = wrapAxiosWithPayment(
-        axios.create({
-          baseURL: 'https://zedkr.up.railway.app',
-          timeout: 60000,
-        }),
-        account
-      );
-
-      // Make the request - x402-stacks handles payment automatically
-      const response = await api.get(endpointPath);
-
-      addTerminalLine('success', '✅ Request successful!');
-      addTerminalLine('output', `📦 Response data:`);
-      addTerminalLine('output', JSON.stringify(response.data, null, 2));
-
-      // Decode payment response from headers
-      const paymentResponse = decodePaymentResponse(response.headers['payment-response']);
-      if (paymentResponse) {
-        addTerminalLine('info', '💰 Payment Details:');
-        addTerminalLine('info', `   Transaction: ${paymentResponse.transaction}`);
-        addTerminalLine('info', `   Payer: ${paymentResponse.payer}`);
-        addTerminalLine('info', `   Network: ${paymentResponse.network}`);
-        if (getExplorerURL) {
-          addTerminalLine('info', `   Explorer: ${getExplorerURL(paymentResponse.transaction, 'testnet')}`);
+      // Step 1: Make initial request (will get 402 Payment Required)
+      let response;
+      try {
+        response = await axios.get(fullUrl, {
+          validateStatus: (status) => status < 500, // Don't throw on 402
+        });
+      } catch (error: any) {
+        if (error.response?.status === 402) {
+          response = error.response;
+        } else {
+          throw error;
         }
       }
 
-      toast.success("Request completed successfully!");
+      // Step 2: Check if payment is required (402)
+      if (response.status === 402) {
+        addTerminalLine('info', '💳 Payment required. Parsing payment details...');
+        
+        // Parse x402 payment response
+        const paymentHeader = response.headers['x402-payment-required'] || 
+                             response.headers['payment-required'] ||
+                             response.data?.payment;
+        
+        let paymentData;
+        try {
+          if (typeof paymentHeader === 'string') {
+            paymentData = JSON.parse(Buffer.from(paymentHeader, 'base64').toString());
+          } else {
+            paymentData = paymentHeader || response.data;
+          }
+        } catch (e) {
+          // Try direct JSON parse
+          paymentData = typeof paymentHeader === 'string' ? JSON.parse(paymentHeader) : paymentHeader;
+        }
+
+        if (!paymentData || !paymentData.accepts || !paymentData.accepts[0]) {
+          addTerminalLine('error', '❌ Could not parse payment details from 402 response');
+          return;
+        }
+
+        const paymentInfo = paymentData.accepts[0];
+        const amountMicroSTX = BigInt(paymentInfo.amount || paymentInfo.amountMicroSTX || '0');
+        const payTo = paymentInfo.payTo || paymentInfo.payto;
+        const network = paymentInfo.network || 'stacks:2147483648'; // testnet
+        const isTestnet = network.includes('2147483648') || network.includes('testnet');
+
+        if (!payTo) {
+          addTerminalLine('error', '❌ Payment address not found in payment details');
+          return;
+        }
+
+        const amountSTX = Number(amountMicroSTX) / 1000000;
+        addTerminalLine('info', `💰 Payment required: ${amountSTX} STX to ${payTo}`);
+        addTerminalLine('info', '🔐 Please sign the transaction in your wallet...');
+
+        // Get wallet address
+        const walletAddress = getWalletAddress();
+        if (!walletAddress) {
+          addTerminalLine('error', '❌ Could not get wallet address');
+          return;
+        }
+
+        // Step 3: Create STX transfer transaction
+        const networkConfig = isTestnet ? new StacksTestnet() : new StacksMainnet();
+        
+        const txOptions = {
+          recipient: payTo,
+          amount: amountMicroSTX.toString(),
+          senderKey: '', // Not needed for wallet signing
+          network: networkConfig,
+          anchorMode: AnchorMode.Any,
+          postConditionMode: PostConditionMode.Allow,
+          memo: `x402 payment for ${endpointPath}`,
+        };
+
+        // Step 4: Sign transaction with wallet (prompts user)
+        addTerminalLine('info', '⏳ Waiting for wallet signature...');
+        const txId = await signTransactionWithWallet(txOptions);
+
+        if (!txId) {
+          addTerminalLine('error', '❌ Transaction signing failed or was cancelled');
+          return;
+        }
+
+        addTerminalLine('success', `✅ Transaction signed! TX ID: ${txId}`);
+        addTerminalLine('info', `🔗 Explorer: ${getExplorerURL(txId, isTestnet ? 'testnet' : 'mainnet')}`);
+
+        // Step 5: Create payment signature header
+        // The x402 protocol expects a payment-signature header
+        // Format: base64 encoded JSON with transaction details
+        const paymentSignature = Buffer.from(JSON.stringify({
+          transaction: txId,
+          payer: walletAddress,
+          amount: amountMicroSTX.toString(),
+          network: network,
+        })).toString('base64');
+
+        // Step 6: Retry request with payment signature
+        addTerminalLine('info', '📤 Resubmitting request with payment signature...');
+        response = await axios.get(fullUrl, {
+          headers: {
+            'payment-signature': paymentSignature,
+          },
+        });
+
+        addTerminalLine('success', '✅ Request successful!');
+        addTerminalLine('output', `📦 Response data:`);
+        addTerminalLine('output', JSON.stringify(response.data, null, 2));
+
+        // Decode payment response from headers
+        const paymentResponse = decodePaymentResponse(response.headers['payment-response']);
+        if (paymentResponse) {
+          addTerminalLine('info', '💰 Payment Details:');
+          addTerminalLine('info', `   Transaction: ${paymentResponse.transaction}`);
+          addTerminalLine('info', `   Payer: ${paymentResponse.payer}`);
+          addTerminalLine('info', `   Network: ${paymentResponse.network}`);
+          if (getExplorerURL) {
+            addTerminalLine('info', `   Explorer: ${getExplorerURL(paymentResponse.transaction, isTestnet ? 'testnet' : 'mainnet')}`);
+          }
+        }
+
+        toast.success("Request completed successfully!");
+      } else if (response.status === 200) {
+        // No payment required
+        addTerminalLine('success', '✅ Request successful!');
+        addTerminalLine('output', `📦 Response data:`);
+        addTerminalLine('output', JSON.stringify(response.data, null, 2));
+      } else {
+        addTerminalLine('error', `❌ Request failed: ${response.status} ${response.statusText}`);
+        addTerminalLine('error', `Response: ${JSON.stringify(response.data, null, 2)}`);
+      }
     } catch (error: any) {
-      if (error.response) {
+      if (error.message?.includes('cancelled')) {
+        addTerminalLine('error', '❌ Transaction signing cancelled by user');
+      } else if (error.response) {
         addTerminalLine('error', `❌ Request failed: ${error.response.status} ${error.response.statusText}`);
         addTerminalLine('error', `Response: ${JSON.stringify(error.response.data, null, 2)}`);
-        
-        // If it's a 402, show payment instructions
-        if (error.response.status === 402) {
-          addTerminalLine('info', '💡 This endpoint requires payment. The x402-stacks library should handle this automatically.');
-          addTerminalLine('info', '   Make sure your wallet has sufficient STX balance.');
-          addTerminalLine('info', '   Get testnet STX from: https://explorer.stacks.co/sandbox/faucet');
-        }
       } else {
-        addTerminalLine('error', `❌ Error: ${error.message}`);
+        addTerminalLine('error', `❌ Error: ${error.message || 'Unknown error'}`);
       }
       toast.error("Request failed. Check terminal for details.");
     } finally {
@@ -333,7 +403,7 @@ const TestTerminal = () => {
               <h1 className="text-2xl font-bold tracking-tight">API Test Terminal</h1>
             </div>
             <p className="text-zinc-500 text-sm">
-              Type commands directly in the terminal below. Press Enter to execute.
+              Type commands directly in the terminal below. Press Enter to execute. Wallet will prompt for transaction signing.
             </p>
           </motion.div>
 
